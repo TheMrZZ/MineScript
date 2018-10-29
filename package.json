@@ -1,0 +1,19 @@
+{
+  "name": "minescript",
+  "version": "1.0.0",
+  "description": "A Minecraft Functions templating engine",
+  "main": "lexer.js",
+  "dependencies": {
+    "colors": "^1.3.2",
+    "expr-eval": "^1.2.2",
+    "moo": "^0.4.3",
+    "nearley": "^2.15.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "nearleyc grammar.ne -o grammar.js && node lexer.js",
+    "build": "nearleyc grammar.ne -o grammar.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
