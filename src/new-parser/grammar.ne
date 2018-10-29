@@ -1,7 +1,8 @@
-value -> literalValue | numericalValue {% data => data[0]%}
 
-literalValue -> variableName _ "=" _ quote literal quote _ {% data => ({name:data[0], value:data[5], type:"literal"}) %}
-numericalValue -> variableName _ "=" _ [^"\s] anything _ {% data => ({name:data[0], value:data[4] + data[5], type:"numerical"}) %}
+value -> literalValue | variableName _ "=" _ [^"\s] anything _ {% data => ({name:data[0], value:data[4] + data[5]}) %}
+
+#literalValue -> variableName _ "=" _ quote literal quote _ {% data => ({name:data[0], value:data[5], type:"literal"}) %}
+#numericalValue -> variableName _ "=" _ [^"\s] anything _ {% data => ({name:data[0], value:data[4] + data[5], type:"numerical"}) %}
 
 variableName -> [\w]:+ {% data => data[0].join('') %}
 
