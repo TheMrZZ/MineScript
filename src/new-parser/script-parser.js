@@ -4,24 +4,28 @@ const fs = require('fs')
 
 const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar))
 
-function parse(fileName) {
+function evaluate(expression, variables) {
+    return new Function(expression).call(variables)
+}
+
+function parse(blockContent, variables) {
+    for (const statement of blockContent) {
+        const type = statement.type
+        if (type === 'block') {
+            parse(statement.content, variables)
+        }
+        else if (type === 'assignment') {
+
+        }
+    }
+}
+
+function parseFile(fileName) {
     const file = fs.readFileSync(fileName, 'utf8')
     parser.feed(file)
     let results = parser.results
 
-    for (let i = 1; i < parser.results.length; i++) {
-        const result = JSON.stringify(parser.results[i])
-        const old = JSON.stringify(parser.results[i - 1])
-
-        if (result !== old) {
-            console.log('NOT IDENTICAL')
-        }
-        else {
-            console.log('IDENTICAL')
-        }
-    }
-
-    console.log(JSON.stringify(results, null, 2))
+    parse(results, {})
 }
 
-module.exports = parse
+module.exports = parseFile

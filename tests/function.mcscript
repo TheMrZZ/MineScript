@@ -1,1 +1,9 @@
-abc def 0 \%}
+{% if true %}
+variable = 123
+say    Hello World :D
+
+    {% if ISNESTED %}
+    say YES IT IS
+    {% endif %}
+
+{% endif %}
