@@ -7,6 +7,7 @@ quote -> ["'] {% id %}
 # considere as a new line, so it has to be taken into account.
 newlines -> newlines_ {% nuller %}              # newlines can simply be new lines
           | newlines_ __ newlines {% nuller %}  # or lines followed by a white space followed by lines
+          
 newlines_ -> newlineChar:+ {% () => 'blank' %}
 newlineChar -> "\r" {% nuller %}
              | "\n" {% nuller %}
