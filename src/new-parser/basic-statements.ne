@@ -3,8 +3,8 @@
 # A basic statement is either a value assignment, a minecraft command or a comment
 basicStatement -> _ basicStatement_ _ {% data => data[1] %}
 basicStatement_ -> valueAssignment {% id %}
-            | minecraftCommand {% id %}
-            | minecraftComment {% id %}
+                 | minecraftCommand {% id %}
+                 | minecraftComment {% id %}
 
 # A minecraft comment starts with a '#' and can be followed by absolutely anything.     
 minecraftComment -> "#" .:+ {% data => ({comment: data[0] + data[1].join(''), type: 'comment'}) %}

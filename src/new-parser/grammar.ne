@@ -1,3 +1,3 @@
 @include "blocks.ne"
 
-main -> block {% id %}
+main -> block {% id %}s

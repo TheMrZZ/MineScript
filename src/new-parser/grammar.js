@@ -47,10 +47,10 @@ var grammar = {
     {"name": "controlConditionEnd", "symbols": [/[^%]/, {"literal":"}"}], "postprocess": dataJoin},
     {"name": "controlConditionEnd$string$1", "symbols": [{"literal":"\\"}, {"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlConditionEnd", "symbols": ["controlConditionEnd$string$1"], "postprocess": id},
-    {"name": "statement", "symbols": ["_", "statement_", "_"], "postprocess": data => data[1]},
-    {"name": "statement_", "symbols": ["valueAssignment"], "postprocess": id},
-    {"name": "statement_", "symbols": ["minecraftCommand"], "postprocess": id},
-    {"name": "statement_", "symbols": ["minecraftComment"], "postprocess": id},
+    {"name": "basicStatement", "symbols": ["_", "basicStatement_", "_"], "postprocess": data => data[1]},
+    {"name": "basicStatement_", "symbols": ["valueAssignment"], "postprocess": id},
+    {"name": "basicStatement_", "symbols": ["minecraftCommand"], "postprocess": id},
+    {"name": "basicStatement_", "symbols": ["minecraftComment"], "postprocess": id},
     {"name": "minecraftComment$ebnf$1", "symbols": [/./]},
     {"name": "minecraftComment$ebnf$1", "symbols": ["minecraftComment$ebnf$1", /./], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "minecraftComment", "symbols": [{"literal":"#"}, "minecraftComment$ebnf$1"], "postprocess": data => ({comment: data[0] + data[1].join(''), type: 'comment'})},
@@ -60,29 +60,31 @@ var grammar = {
     {"name": "controlBlockIfElse$macrocall$2", "symbols": ["controlBlockIfElse$macrocall$2$string$1"]},
     {"name": "controlBlockIfElse$macrocall$1$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$1$string$2", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "controlBlockIfElse$macrocall$1", "symbols": ["_", "controlBlockIfElse$macrocall$1$string$1", "_", "controlBlockIfElse$macrocall$2", "__", "controlCondition", "_", "controlBlockIfElse$macrocall$1$string$2", "_"], "postprocess": data => ({controlStatement: data[3].join(), controlCondition: data[5]})},
+    {"name": "controlBlockIfElse$macrocall$1", "symbols": ["_", "controlBlockIfElse$macrocall$1$string$1", "_", "controlBlockIfElse$macrocall$2", "__", "controlCondition", "_", "controlBlockIfElse$macrocall$1$string$2", "_"], "postprocess": data => ({type: data[3].join(), argument : data[5]})},
     {"name": "controlBlockIfElse$macrocall$4$string$1", "symbols": [{"literal":"e"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$4", "symbols": ["controlBlockIfElse$macrocall$4$string$1"]},
     {"name": "controlBlockIfElse$macrocall$3$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$3$string$2", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "controlBlockIfElse$macrocall$3", "symbols": ["_", "controlBlockIfElse$macrocall$3$string$1", "_", "controlBlockIfElse$macrocall$4", "__", "controlCondition", "_", "controlBlockIfElse$macrocall$3$string$2", "_"], "postprocess": data => ({controlStatement: data[3].join(), controlCondition: data[5]})},
+    {"name": "controlBlockIfElse$macrocall$3", "symbols": ["_", "controlBlockIfElse$macrocall$3$string$1", "_", "controlBlockIfElse$macrocall$4", "__", "controlCondition", "_", "controlBlockIfElse$macrocall$3$string$2", "_"], "postprocess": data => ({type: data[3].join(), argument : data[5]})},
     {"name": "controlBlockIfElse$macrocall$6$string$1", "symbols": [{"literal":"i"}, {"literal":"f"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$6", "symbols": ["controlBlockIfElse$macrocall$6$string$1"]},
     {"name": "controlBlockIfElse$macrocall$5$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$5$string$2", "symbols": [{"literal":"e"}, {"literal":"n"}, {"literal":"d"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$5$string$3", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "controlBlockIfElse$macrocall$5", "symbols": ["_", "controlBlockIfElse$macrocall$5$string$1", "_", "controlBlockIfElse$macrocall$5$string$2", "controlBlockIfElse$macrocall$6", "_", "controlBlockIfElse$macrocall$5$string$3", "_"], "postprocess": data => ({controlStatement: data[3] + data[4].join()})},
+    {"name": "controlBlockIfElse$macrocall$5", "symbols": ["_", "controlBlockIfElse$macrocall$5$string$1", "_", "controlBlockIfElse$macrocall$5$string$2", "controlBlockIfElse$macrocall$6", "_", "controlBlockIfElse$macrocall$5$string$3", "_"], "postprocess": data => ({type: data[3] + data[4].join()})},
     {"name": "controlBlockIfElse", "symbols": ["controlBlockIfElse$macrocall$1", "newlines", "blockContent", "newlines", "controlBlockIfElse$macrocall$3", "newlines", "blockContent", "newlines", "controlBlockIfElse$macrocall$5"], "postprocess": 
         function (data) {
             return {
                 type: 'block',
                 isIfElse: true,
                 if: {
-                    controlStructure: data[0],
+                    controlType: data[0].type,
+                    controlArgument: data[0].argument,
                     content: data[2]
                 },
                 else: {
-                    controlStructure: data[4],
+                    controlType: data[4].type,
+                    controlArgument: data[4].argument,
                     content: data[6]
                 }
             }
@@ -93,40 +95,42 @@ var grammar = {
     {"name": "block$macrocall$1$macrocall$2", "symbols": ["block$macrocall$2"]},
     {"name": "block$macrocall$1$macrocall$1$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$1$macrocall$1$string$2", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "block$macrocall$1$macrocall$1", "symbols": ["_", "block$macrocall$1$macrocall$1$string$1", "_", "block$macrocall$1$macrocall$2", "__", "controlCondition", "_", "block$macrocall$1$macrocall$1$string$2", "_"], "postprocess": data => ({controlStatement: data[3].join(), controlCondition: data[5]})},
+    {"name": "block$macrocall$1$macrocall$1", "symbols": ["_", "block$macrocall$1$macrocall$1$string$1", "_", "block$macrocall$1$macrocall$2", "__", "controlCondition", "_", "block$macrocall$1$macrocall$1$string$2", "_"], "postprocess": data => ({type: data[3].join(), argument : data[5]})},
     {"name": "block$macrocall$1$macrocall$4", "symbols": ["block$macrocall$2"]},
     {"name": "block$macrocall$1$macrocall$3$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$1$macrocall$3$string$2", "symbols": [{"literal":"e"}, {"literal":"n"}, {"literal":"d"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$1$macrocall$3$string$3", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "block$macrocall$1$macrocall$3", "symbols": ["_", "block$macrocall$1$macrocall$3$string$1", "_", "block$macrocall$1$macrocall$3$string$2", "block$macrocall$1$macrocall$4", "_", "block$macrocall$1$macrocall$3$string$3", "_"], "postprocess": data => ({controlStatement: data[3] + data[4].join()})},
+    {"name": "block$macrocall$1$macrocall$3", "symbols": ["_", "block$macrocall$1$macrocall$3$string$1", "_", "block$macrocall$1$macrocall$3$string$2", "block$macrocall$1$macrocall$4", "_", "block$macrocall$1$macrocall$3$string$3", "_"], "postprocess": data => ({type: data[3] + data[4].join()})},
     {"name": "block$macrocall$1", "symbols": ["block$macrocall$1$macrocall$1", "newlines", "blockContent", "newlines", "block$macrocall$1$macrocall$3"], "postprocess": 
         function (data) {
             return {
                 type: 'block',
                 isIfElse: false,
-                controlStructure: data[0],
+                controlType: data[0].type,
+                controlArgument: data[0].argument,
                 content: data[2]
             }
         }
         },
     {"name": "block", "symbols": ["block$macrocall$1"], "postprocess": id},
-    {"name": "block$macrocall$4$string$1", "symbols": [{"literal":"f"}, {"literal":"o"}, {"literal":"r"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "block$macrocall$4$string$1", "symbols": [{"literal":"w"}, {"literal":"h"}, {"literal":"i"}, {"literal":"l"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$4", "symbols": ["block$macrocall$4$string$1"]},
     {"name": "block$macrocall$3$macrocall$2", "symbols": ["block$macrocall$4"]},
     {"name": "block$macrocall$3$macrocall$1$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$3$macrocall$1$string$2", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "block$macrocall$3$macrocall$1", "symbols": ["_", "block$macrocall$3$macrocall$1$string$1", "_", "block$macrocall$3$macrocall$2", "__", "controlCondition", "_", "block$macrocall$3$macrocall$1$string$2", "_"], "postprocess": data => ({controlStatement: data[3].join(), controlCondition: data[5]})},
+    {"name": "block$macrocall$3$macrocall$1", "symbols": ["_", "block$macrocall$3$macrocall$1$string$1", "_", "block$macrocall$3$macrocall$2", "__", "controlCondition", "_", "block$macrocall$3$macrocall$1$string$2", "_"], "postprocess": data => ({type: data[3].join(), argument : data[5]})},
     {"name": "block$macrocall$3$macrocall$4", "symbols": ["block$macrocall$4"]},
     {"name": "block$macrocall$3$macrocall$3$string$1", "symbols": [{"literal":"{"}, {"literal":"%"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$3$macrocall$3$string$2", "symbols": [{"literal":"e"}, {"literal":"n"}, {"literal":"d"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$3$macrocall$3$string$3", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "block$macrocall$3$macrocall$3", "symbols": ["_", "block$macrocall$3$macrocall$3$string$1", "_", "block$macrocall$3$macrocall$3$string$2", "block$macrocall$3$macrocall$4", "_", "block$macrocall$3$macrocall$3$string$3", "_"], "postprocess": data => ({controlStatement: data[3] + data[4].join()})},
+    {"name": "block$macrocall$3$macrocall$3", "symbols": ["_", "block$macrocall$3$macrocall$3$string$1", "_", "block$macrocall$3$macrocall$3$string$2", "block$macrocall$3$macrocall$4", "_", "block$macrocall$3$macrocall$3$string$3", "_"], "postprocess": data => ({type: data[3] + data[4].join()})},
     {"name": "block$macrocall$3", "symbols": ["block$macrocall$3$macrocall$1", "newlines", "blockContent", "newlines", "block$macrocall$3$macrocall$3"], "postprocess": 
         function (data) {
             return {
                 type: 'block',
                 isIfElse: false,
-                controlStructure: data[0],
+                controlType: data[0].type,
+                controlArgument: data[0].argument,
                 content: data[2]
             }
         }
@@ -143,7 +147,7 @@ var grammar = {
         } 
         },
     {"name": "basicBlock", "symbols": ["block"], "postprocess": id},
-    {"name": "basicBlock", "symbols": ["statement"], "postprocess": id},
+    {"name": "basicBlock", "symbols": ["basicStatement"], "postprocess": id},
     {"name": "main", "symbols": ["block"], "postprocess": id}
 ]
   , ParserStart: "main"

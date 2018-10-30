@@ -1,9 +1,15 @@
 {% if true %}
-variable = 123
+variable = 5
 say    Hello World :D
+say {{ variable }}
 
-    {% if ISNESTED %}
+{% if false %}
     say YES IT IS
-    {% endif %}
+{% endif %}
+
+{% while variable > 0 %}
+    variable = variable - 2
+    say looping!
+{% endwhile %}
 
 {% endif %}
