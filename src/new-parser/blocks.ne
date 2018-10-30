@@ -1,6 +1,6 @@
 @include "./basics.ne"
 @include "./control-structures.ne"
-@include "./statements.ne"
+@include "./basic-statements.ne"
 
 @{%
     const nuller = () => null
@@ -9,7 +9,7 @@
 
 # A control block is a set of continous lines, containing a group of statements.
 # It is bounded by control stuctures (if -> endif, for -> endfor)
-controlBlock[CONTROL_STATEMENT] -> controlStructure[$CONTROL_STATEMENT] newlines blockInside newlines controlStructureEnd[$CONTROL_STATEMENT] {%
+controlBlock[CONTROL_STATEMENT] -> controlStructure[$CONTROL_STATEMENT] newlines blockContent newlines controlStructureEnd[$CONTROL_STATEMENT] {%
     function (data) {
         return {
             type: 'block',
@@ -20,7 +20,7 @@ controlBlock[CONTROL_STATEMENT] -> controlStructure[$CONTROL_STATEMENT] newlines
     }
 %}
 
-controlBlockIfElse -> controlStructure["if"] newlines blockInside newlines controlStructure["else"] newlines blockInside newlines controlStructureEnd["if"] {%
+controlBlockIfElse -> controlStructure["if"] newlines blockContent newlines controlStructure["else"] newlines blockContent newlines controlStructureEnd["if"] {%
     function (data) {
         return {
             type: 'block',
@@ -43,9 +43,9 @@ block -> controlBlock["if"] {% id %}
 
 
 # The inside of a block is a group of statements, which can contain blocks too.
-blockInside -> blockInside_ {% data => ({type: 'blockInside', statements: data[0]}) %}
-blockInside_ -> basicBlock
-              | basicBlock newlines blockInside_ {% 
+blockContent -> blockContent_ {% id %}
+blockContent_ -> basicBlock
+              | basicBlock newlines blockContent_ {% 
                                                     function (data) {
                                                     let array = data[2]
                                                     array.unshift(data[0])
@@ -53,6 +53,6 @@ blockInside_ -> basicBlock
                                                 } 
                                                 %}
 
-# A basic block can be a block of statements, or a single statement
+# A statement can be a single basic statement, or a block of other statements
 basicBlock -> block     {% id %} 
-            | statement {% id %}
+            | basicStatement {% id %}

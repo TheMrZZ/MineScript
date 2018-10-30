@@ -72,7 +72,7 @@ var grammar = {
     {"name": "controlBlockIfElse$macrocall$5$string$2", "symbols": [{"literal":"e"}, {"literal":"n"}, {"literal":"d"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$5$string$3", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "controlBlockIfElse$macrocall$5", "symbols": ["_", "controlBlockIfElse$macrocall$5$string$1", "_", "controlBlockIfElse$macrocall$5$string$2", "controlBlockIfElse$macrocall$6", "_", "controlBlockIfElse$macrocall$5$string$3", "_"], "postprocess": data => ({controlStatement: data[3] + data[4].join()})},
-    {"name": "controlBlockIfElse", "symbols": ["controlBlockIfElse$macrocall$1", "newlines", "blockInside", "newlines", "controlBlockIfElse$macrocall$3", "newlines", "blockInside", "newlines", "controlBlockIfElse$macrocall$5"], "postprocess": 
+    {"name": "controlBlockIfElse", "symbols": ["controlBlockIfElse$macrocall$1", "newlines", "blockContent", "newlines", "controlBlockIfElse$macrocall$3", "newlines", "blockContent", "newlines", "controlBlockIfElse$macrocall$5"], "postprocess": 
         function (data) {
             return {
                 type: 'block',
@@ -99,7 +99,7 @@ var grammar = {
     {"name": "block$macrocall$1$macrocall$3$string$2", "symbols": [{"literal":"e"}, {"literal":"n"}, {"literal":"d"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$1$macrocall$3$string$3", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$1$macrocall$3", "symbols": ["_", "block$macrocall$1$macrocall$3$string$1", "_", "block$macrocall$1$macrocall$3$string$2", "block$macrocall$1$macrocall$4", "_", "block$macrocall$1$macrocall$3$string$3", "_"], "postprocess": data => ({controlStatement: data[3] + data[4].join()})},
-    {"name": "block$macrocall$1", "symbols": ["block$macrocall$1$macrocall$1", "newlines", "blockInside", "newlines", "block$macrocall$1$macrocall$3"], "postprocess": 
+    {"name": "block$macrocall$1", "symbols": ["block$macrocall$1$macrocall$1", "newlines", "blockContent", "newlines", "block$macrocall$1$macrocall$3"], "postprocess": 
         function (data) {
             return {
                 type: 'block',
@@ -121,7 +121,7 @@ var grammar = {
     {"name": "block$macrocall$3$macrocall$3$string$2", "symbols": [{"literal":"e"}, {"literal":"n"}, {"literal":"d"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$3$macrocall$3$string$3", "symbols": [{"literal":"%"}, {"literal":"}"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "block$macrocall$3$macrocall$3", "symbols": ["_", "block$macrocall$3$macrocall$3$string$1", "_", "block$macrocall$3$macrocall$3$string$2", "block$macrocall$3$macrocall$4", "_", "block$macrocall$3$macrocall$3$string$3", "_"], "postprocess": data => ({controlStatement: data[3] + data[4].join()})},
-    {"name": "block$macrocall$3", "symbols": ["block$macrocall$3$macrocall$1", "newlines", "blockInside", "newlines", "block$macrocall$3$macrocall$3"], "postprocess": 
+    {"name": "block$macrocall$3", "symbols": ["block$macrocall$3$macrocall$1", "newlines", "blockContent", "newlines", "block$macrocall$3$macrocall$3"], "postprocess": 
         function (data) {
             return {
                 type: 'block',
@@ -133,9 +133,9 @@ var grammar = {
         },
     {"name": "block", "symbols": ["block$macrocall$3"], "postprocess": id},
     {"name": "block", "symbols": ["controlBlockIfElse"], "postprocess": id},
-    {"name": "blockInside", "symbols": ["blockInside_"], "postprocess": data => ({type: 'blockInside', statements: data[0]})},
-    {"name": "blockInside_", "symbols": ["basicBlock"]},
-    {"name": "blockInside_", "symbols": ["basicBlock", "newlines", "blockInside_"], "postprocess":  
+    {"name": "blockContent", "symbols": ["blockContent_"], "postprocess": id},
+    {"name": "blockContent_", "symbols": ["basicBlock"]},
+    {"name": "blockContent_", "symbols": ["basicBlock", "newlines", "blockContent_"], "postprocess":  
             function (data) {
             let array = data[2]
             array.unshift(data[0])
