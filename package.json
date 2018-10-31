@@ -5,6 +5,7 @@
   "main": "lexer.js",
   "dependencies": {
     "colors": "^1.3.2",
+    "commander": "^2.19.0",
     "expr-eval": "^1.2.2",
     "moo": "^0.4.3",
     "nearley": "^2.15.1"

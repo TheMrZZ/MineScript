@@ -1,6 +1,9 @@
-const scriptParser = require('./src/new-parser/script-parser')
+const fs = require('fs')
 
-const args = process.argv.slice(2);
-const name = args[0]
+const program = require('./src/argumentParser')
+const scriptParser = require('./src/parser/script-parser')
 
-scriptParser(name)
+const result = scriptParser(program.inputFile)
+fs.writeFile(program.outputFile, result, 'utf8', err => {
+    console.error(err)
+})
