@@ -1,0 +1,56 @@
+const moo = require('moo')
+
+/**
+ * Transform an array of strings into an object of literals
+ * @example
+ * literals(["$", "/", "abc"])
+ * => {"$": "$", "/": "/", "abc": "abc"}
+ * @param {Array} array the array to transform into an object of literals
+ * @return {Object} an object of identical key-value pairs
+ *
+ */
+function literals(array) {
+    let object = {}
+    for (const item of array) {
+        object[item] = item
+    }
+    return object
+}
+
+let rules = Object.assign({
+    // Control structures
+    // A control condition cannot end by a %}, except if it's escaped:
+    controlCondition: /(?!\s).+?(?!%}|\\%})/,
+
+    // Basic statements
+    minecraftComment:    /#.+?/,
+    minecraftCommandArg: /(?!=).+?/,
+
+    word: /\w+/,
+
+    // Basics
+    newlines:  /\s+[\r\n]\s+/,
+    ws:        /[ \t\v\f]+/,
+    something: /.+/,
+}, literals([
+    "=", "{%", "%}", "{{", "}}", "if", "while", "for"
+]))
+
+rules = {
+    // Control structures
+    // A control condition cannot end by a %}, except if it's escaped:
+    controlCondition: /(?!\s).+?(?!%}|\\%})/,
+
+    // Basic statements
+    minecraftComment:    /#.+?/,
+    minecraftCommand: /(?!=).+?/,
+    word:                /\w+/,
+
+    // Basics
+    newlines:   {match: /\s+[\r\n]\s+/, breakLines: true},
+    ws:        /[ \t\v\f]+/,
+}
+
+const lexer = moo.compile(rules)
+
+module.exports = lexer

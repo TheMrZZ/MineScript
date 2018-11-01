@@ -1,3 +1,9 @@
+# DONE
+
+@{%
+    const lexer = require('lexer.js')
+%}
+
 word -> [\w]:+ {% data => data[0].join('') %}
 
 quote -> ["'] {% id %}
@@ -16,21 +22,12 @@ _ -> null | __ {% nuller %}
 __ -> w | __ w {% nuller %}
 w -> [ \t\v\f] {% nuller %}
 
-# A literal is the content of a string. It can be:
-#   -> A list of characters not ending by a quote
-#   -> A list of characters ending by an escaped quote
-#   -> Any single character
-#   -> Nothing
-literal -> .:+ [^\"] {% data => data[0].join('') + data[1]%}
-         | .:+ "\\\"" {% data => data[0].join('') + data[1]%}
-         | .
-         | null
-
-
+something -> [^\s] .:* [^\s] {% data => data[0] + data[1].join('') + data[2] %}
+           | [^\s] {% id %}
+           
 # Anything is either:
 #   -> A list of characters not starting or ending by a whitespace
 #   -> A single character (but not a whitespace)
 #   -> Nothing
-anything -> [^\s] .:* [^\s] {% data => data[0] + data[1].join('') + data[2] %}
-          | [^\s] {% id %}
+anything -> something {% id %}
           | null {% () => "" %}

@@ -27,5 +27,3 @@ module.exports = {
     inputFile: inputFile,
     outputFile: program.output || changeExtension(inputFile, '.mcfunction')
 }
-
-console.log(module.exports)

@@ -3,7 +3,7 @@
 @include "./basic-statements.ne"
 
 @{%
-    const nuller = () => null
+    const nuller = () => function () {return null}
     const dataJoin = (data) => data.join('')
 %}
 
@@ -46,16 +46,15 @@ block -> controlBlock["if"] {% id %}
 
 
 # The inside of a block is a group of statements, which can contain blocks too.
-blockContent -> blockContent_ {% id %}
-blockContent_ -> basicBlock
-               | basicBlock newlines blockContent_ {% 
+blockContent -> basicBlock # No {% id %}, because blockContent_ is an array of statements
+              | basicBlock newlines blockContent {% 
                                                     function (data) {
-                                                    let array = data[2]
-                                                    array.unshift(data[0])
-                                                    return array 
-                                                } 
-                                                %}
+                                                        let array = data[2]
+                                                        array.unshift(data[0])
+                                                        return array 
+                                                    } 
+                                                    %}
 
-# A statement can be a single basic statement, or a block of other statements
-basicBlock -> block     {% id %} 
+# A basic can be a single basic statement, or a block of other statements
+basicBlock -> block          {% id %} 
             | basicStatement {% id %}
