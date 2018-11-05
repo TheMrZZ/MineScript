@@ -16,6 +16,8 @@ program
     .arguments('<input>')
     .action(input => { inputFile = input })
     .option('-o, --output', 'The output file. Defaults to the same file name, but with .mcfunction extension.')
+    .option('-w, --warnings', 'Activates the warnings.')
+    .option('-d, --debug', 'Activate the debug mode. Only useful for Minescript developers - not for users.')
     .parse(process.argv)
 
 if (!process.argv.slice(2).length) {
@@ -25,5 +27,7 @@ if (!process.argv.slice(2).length) {
 
 module.exports = {
     inputFile: inputFile,
-    outputFile: program.output || changeExtension(inputFile, '.mcfunction')
+    outputFile: program.output || changeExtension(inputFile, '.mcfunction'),
+    warnings: program.warnings || program.debug || false,
+    debug: program.debug || false,
 }

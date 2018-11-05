@@ -1,1 +1,10 @@
-{%  whiled a%b %}
+# aba
+say {{"YO"}}a
+
+i = 0
+{% while i < 10 && i < Math.sqrt(10) %}
+    say {{ i }}
+    i +*= 2
+{% endwhile %}
+
+# def
