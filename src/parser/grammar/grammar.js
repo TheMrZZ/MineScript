@@ -22,7 +22,6 @@ function id(x) { return x[0]; }
         }
         return array
     }
-
     let conditionStack = []
 var grammar = {
     Lexer: lexer,
@@ -60,7 +59,7 @@ var grammar = {
     {"name": "valueAssignment$ebnf$1", "symbols": [(lexer.has("valueRight") ? {type: "valueRight"} : valueRight)], "postprocess": id},
     {"name": "valueAssignment$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "valueAssignment", "symbols": [(lexer.has("valueLeft") ? {type: "valueLeft"} : valueLeft), "_", "valueAssignment$ebnf$1"], "postprocess": data => ({type: 'assignment', name: data[0].value, value: data[2] ? data[2].value : undefined})},
-    {"name": "minecraftCommand", "symbols": [(lexer.has("command") ? {type: "command"} : command), {"literal":" "}, "commandValue"], "postprocess": data => ({type: 'command', command: data[0].value, value: data[2]})},
+    {"name": "minecraftCommand", "symbols": [(lexer.has("command") ? {type: "command"} : command), "commandValue"], "postprocess": data => ({type: 'command', command: data[0].value, value: data[1]})},
     {"name": "commandValue", "symbols": ["commandValue_"], "postprocess": data => [data[0]]},
     {"name": "commandValue", "symbols": ["commandValue_", "commandValue"], "postprocess": data => addToArray(data[1], data[0])},
     {"name": "commandValue_", "symbols": [(lexer.has("literal") ? {type: "literal"} : literal)], "postprocess": data => ({type: 'literal', data: data[0].value})},

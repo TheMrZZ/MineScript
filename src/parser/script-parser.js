@@ -3,8 +3,11 @@ const grammar = require('./grammar/grammar')
 const fs = require('fs')
 
 const options = require('../argumentParser')
-
 const handleErrors = require('./errorsHandler')
+
+// Following libraries are imported in order to be used within minescripts.
+const libraries = [['Vector', '../vector']]
+const imports = libraries.reduce((result, lib) => result + `const ${lib[0]} = require("${lib[1]}");`, '')
 
 const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), {keepHistory: true})
 
@@ -24,7 +27,8 @@ function normalizeCondition(expression) {
  * @return {*} the result of the expression
  */
 function evaluate(expression, variables) {
-    return new Function(`return ${expression}`).call(variables)
+    const fullExpr = imports + `return ${expression};`
+    return new Function('require', fullExpr)(require, variables)
 }
 
 /**
@@ -152,6 +156,7 @@ function parseFile(fileName) {
     }
 
     let result = results[0]
+
     return parseContent(result, {}, 0)
 }
 

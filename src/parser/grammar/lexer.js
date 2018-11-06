@@ -46,7 +46,7 @@ let states = {
             lineBreaks: false,
             push: 'assignmentBlock'
         },
-        command: {match: /[a-z]+/, push: 'commandBlock'},
+        command: {match: /[a-z]+ /, push: 'commandBlock', value: s => s.trim()},
     },
 
     controlBlock: {
@@ -64,13 +64,12 @@ let states = {
     },
 
     commandBlock: {
-        literal: {match: addRegex(/(?!\s)/, until("{{")), lineBreaks: false},
+        literal: {match: until("{{"), lineBreaks: false},
         expression: {
             match: addRegex(/{{/, until("}}"), /}}/),
             value: s => s.slice(2, -2).trim(),
             lineBreaks: true,
         },
-        " ": " ",
         // End of line => need to go back to the main stack
         newlines: {match: /[\r\n]+/, lineBreaks: true, pop: true}
     },
@@ -82,12 +81,18 @@ let states = {
 
 }
 
-/* Apply global rules to states. This order allows the states
- * rules to override global rules, giving them higher priority
- *
+/*
+ * Apply global rules to states. This order allows the states
+ * rules to override global rules, giving them higher priority.
+ * Global rules are added at the end, so they have the lowest token priority.
  */
-for (let state in states) {
-    states[state] = Object.assign({}, globalRules, states[state])
+for (let stateName in states) {
+    let state = states[stateName]
+    for (const rule of Object.keys(globalRules)) {
+        if (!state.hasOwnProperty(rule)) {
+            state[rule] = globalRules[rule]
+        }
+    }
 }
 
 const lexer = moo.states(states)

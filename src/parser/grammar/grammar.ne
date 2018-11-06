@@ -18,7 +18,6 @@
         }
         return array
     }
-
     let conditionStack = []
 %}
 
@@ -71,7 +70,7 @@ minecraftComment -> "#" _ %comment {% data => ({type: 'comment', comment: data.j
 valueAssignment -> %valueLeft _ %valueRight:? {% data => ({type: 'assignment', name: data[0].value, value: data[2] ? data[2].value : undefined}) %}
 
 # A minecraft command
-minecraftCommand -> %command " " commandValue {% data => ({type: 'command', command: data[0].value, value: data[2]})%}
+minecraftCommand -> %command commandValue {% data => ({type: 'command', command: data[0].value, value: data[1]})%}
 
 commandValue -> commandValue_ {% data => [data[0]] %}
               | commandValue_ commandValue {% data => addToArray(data[1], data[0]) %}
