@@ -1,21 +1,15 @@
 const program = require('commander')
 const path = require('path')
 
-let inputFile = ''
-
-function changeExtension(filePath, extension) {
-    if (!filePath) return;
-
-    let parsedFile = path.parse(filePath)
-    let fileName = parsedFile.name + extension
-    return path.join(parsedFile.dir, fileName)
-}
+let inputFolder = ''
+let outputFolder = ''
 
 program
     .version('1.0.0')
-    .arguments('<input>')
-    .action(input => { inputFile = input })
-    .option('-o, --output', 'The output file. Defaults to the same file name, but with .mcfunction extension.')
+    .arguments('<inputFolder> <datapack>')
+    .description('Compiles .mcscript or .minescript files located inside the given inputFolder.\n' +
+        'The resulting .mcfunction files are stored inside the given datapack.')
+    .action((input, datapack) => { inputFolder = input; outputFolder = datapack; })
     .option('-w, --warnings', 'Activates the warnings.')
     .option('-d, --debug', 'Activate the debug mode. Only useful for Minescript developers - not for users.')
     .parse(process.argv)
@@ -25,9 +19,15 @@ if (!process.argv.slice(2).length) {
     process.exit()
 }
 
+function optionMissing(message) {
+    console.error(message)
+    program.outputHelp()
+    process.exit(1)
+}
+
 module.exports = {
-    inputFile: inputFile,
-    outputFile: program.output || changeExtension(inputFile, '.mcfunction'),
+    inputFolder: inputFolder,
+    outputFolder: outputFolder,
     warnings: program.warnings || program.debug || false,
     debug: program.debug || false,
 }

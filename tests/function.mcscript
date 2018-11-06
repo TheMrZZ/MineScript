@@ -1,8 +1,8 @@
 # Facepalm animation
 
 # n is the number of ticks for the animation
-var n = 100
-var tick = 0
+n = 100
+tick = 0
 
 execute if score tick vars matches 0..{{n-1}} run scoreboard players add tick vars 1
 
