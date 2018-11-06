@@ -1,10 +1,22 @@
-# aba
-say {{"YO"}}a
+# Facepalm animation
 
-i = 0
-{% while i < 10 && i < Math.sqrt(10) %}
-    say {{ i }}
-    i +*= 2
+# n is the number of ticks for the animation
+var n = 100
+var tick = 0
+
+execute if score tick vars matches 0..{{n-1}} run scoreboard players add tick vars 1
+
+head = [new Vector(0, 360, 0, 'f'), new Vector(27, 341, 0, 'f')]
+deltaHead = head[1].subtract(head[0]).divide(n)
+
+leftArm = [new Vector(0, 0, 0, 'f'), new Vector(-104, 10, 0, 'f')]
+deltaLeftArm = leftArm[1].subtract(leftArm[0]).divide(n)
+
+{% while tick <= n %}
+    currentHead = head[0].add(deltaHead.multiply(tick)).join(',')
+    currentLeftArm = leftArm[0].add(deltaLeftArm.multiply(tick)).join(',')
+    condition = `if score tick vars matches ${tick}..${tick} as @e[name=facepalm,limit=1]`
+    execute {{ condition }} run data merge entity @s {Pose:{Head:[{{ currentHead }}],LeftArm:[{{ currentLeftArm }}]}}
+
+    tick += 1
 {% endwhile %}
-
-# def

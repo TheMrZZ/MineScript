@@ -1,4 +1,5 @@
 const fs = require('fs')
+const colors = require('colors')
 
 const program = require('./src/argumentParser')
 const scriptParser = require('./src/parser/script-parser')
@@ -8,5 +9,8 @@ fs.writeFile(program.outputFile, result, 'utf8', err => {
     if (err) {
         console.error(err)
         throw err
+    }
+    else {
+        console.log('Compilation is successful!'.green)
     }
 })
