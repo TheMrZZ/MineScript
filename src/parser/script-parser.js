@@ -25,14 +25,14 @@ function normalizeCondition(expression) {
  * @return {*} the result of the expression
  */
 function evaluate(expression, variables, line) {
-    const fullExpr = `(${expression})`
     try {
-        return vm.runInContext(fullExpr, variables)
+        return vm.runInContext(expression, variables)
     }
     catch (e) {
         let stack = e.stack.split('\n')
         let msg = `[${e.name}] ${e.message}\n`
-        msg += stack[1] + '\n' + stack[2]
+        msg += stack[1] + '\n' + stack[2] + '\n'
+        msg += `Erroneous expression [line ${line}]:\n${expression}\n`
         console.error(msg)
         process.exit(-1)
     }
@@ -53,7 +53,7 @@ function parseBlock(block, variables, depth) {
     let argument = normalizeCondition(block.control.condition)
 
     if (block.control.conditional === 'if') {
-        if (evaluate(argument, variables)) {
+        if (evaluate(argument, variables, block.control.line)) {
             result = parseContent(block.content, variables, depth + 1)
         }
         return result
@@ -63,7 +63,7 @@ function parseBlock(block, variables, depth) {
         let numberOfLoops = 0
         let warning = 10000
 
-        while (evaluate(argument, variables)) {
+        while (evaluate(argument, variables, block.control.line)) {
             result += parseContent(block.content, variables, depth + 1)
 
             if (options.warnings) {
@@ -108,7 +108,7 @@ function parseContent(blockContent, variables, depth) {
                 result += parseBlock(statement, variables, depth)
                 break
             case 'assignment':
-                evaluate(`${statement.name} ${statement.value}`, variables)
+                evaluate(`${statement.name} ${statement.value}`, variables, statement.line)
                 break
             case 'command':
                 result += `${statement.command} ${parseCommandArgs(statement.value, variables)}\n`

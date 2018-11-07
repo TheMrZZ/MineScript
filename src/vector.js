@@ -23,6 +23,7 @@ class Vector {
      * @return {Vector} the sum of the vectors
      */
     add(v) {
+        if ([null, undefined].includes(v)) throw new TypeError('Invalid argument for Vector.add: ' + v)
         if (v instanceof Vector) return new Vector(this.x + v.x, this.y + v.y, this.z + v.z, this.unit)
         else return new Vector(this.x + v, this.y + v, this.z + v, this.unit)
     }
@@ -33,6 +34,7 @@ class Vector {
      * @return {Vector} the difference of the vectors
      */
     subtract(v) {
+        if ([null, undefined].includes(v)) throw new TypeError('Invalid argument for Vector.subtract: ' + v)
         if (v instanceof Vector) return new Vector(this.x - v.x, this.y - v.y, this.z - v.z, this.unit)
         else return new Vector(this.x - v, this.y - v, this.z - v, this.unit)
     }
@@ -43,6 +45,7 @@ class Vector {
      * @return {Vector} the product
      */
     multiply(v) {
+        if ([null, undefined].includes(v)) throw new TypeError('Invalid argument for Vector.multiply: ' + v)
         if (v instanceof Vector) return new Vector(this.x * v.x, this.y * v.y, this.z * v.z, this.unit)
         else return new Vector(this.x * v, this.y * v, this.z * v, this.unit)
     }
@@ -53,6 +56,7 @@ class Vector {
      * @return {Vector} the division
      */
     divide(v) {
+        if ([null, undefined].includes(v)) throw new TypeError('Invalid argument for Vector.divide: ' + v)
         if (v instanceof Vector) return new Vector(this.x / v.x, this.y / v.y, this.z / v.z, this.unit)
         else return new Vector(this.x / v, this.y / v, this.z / v, this.unit)
     }
@@ -63,6 +67,7 @@ class Vector {
      * @return {boolean} true if they are both equal, else false
      */
     equals(v) {
+        if ([null, undefined].includes(v)) throw new TypeError('Invalid argument for Vector.equals: ' + v)
         return this.x === v.x && this.y === v.y && this.z === v.z
     }
 
