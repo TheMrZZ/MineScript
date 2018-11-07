@@ -6,10 +6,10 @@ let outputFolder = ''
 
 program
     .version('1.0.0')
-    .arguments('<inputFolder> <datapack>')
+    .arguments('<inputFolder> <namespaceFolder>')
     .description('Compiles .mcscript or .minescript files located inside the given inputFolder.\n' +
-        'The resulting .mcfunction files are stored inside the given datapack.')
-    .action((input, datapack) => { inputFolder = input; outputFolder = datapack; })
+        'The resulting .mcfunction files are stored inside the given namespaceFolder - located inside a datapack.')
+    .action((input, namespace) => { inputFolder = input; outputFolder = namespace; })
     .option('-w, --warnings', 'Activates the warnings.')
     .option('-d, --debug', 'Activate the debug mode. Only useful for Minescript developers - not for users.')
     .parse(process.argv)

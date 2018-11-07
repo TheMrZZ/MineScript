@@ -1,13 +1,10 @@
 const nearley = require('nearley')
 const grammar = require('./grammar/grammar')
 const fs = require('fs')
+const vm = require('vm')
 
 const options = require('../argumentParser')
 const handleErrors = require('./errorsHandler')
-
-// Following libraries are imported in order to be used within minescripts.
-const libraries = [['Vector', '../vector']]
-const imports = libraries.reduce((result, lib) => result + `const ${lib[0]} = require("${lib[1]}");`, '')
 
 const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), {keepHistory: true})
 
@@ -22,13 +19,23 @@ function normalizeCondition(expression) {
 /**
  * Evaluates a javascript expression. Returns its result,
  * and modify the variables if needed.
- * @param expression the expression to evaluate
- * @param variables the current variables
+ * @param {string} expression the expression to evaluate
+ * @param {object} variables the current variables
+ * @param {int} line line of the current expression
  * @return {*} the result of the expression
  */
-function evaluate(expression, variables) {
-    const fullExpr = imports + `return ${expression};`
-    return new Function('require', fullExpr)(require, variables)
+function evaluate(expression, variables, line) {
+    const fullExpr = `(${expression})`
+    try {
+        return vm.runInContext(fullExpr, variables)
+    }
+    catch (e) {
+        let stack = e.stack.split('\n')
+        let msg = `[${e.name}] ${e.message}\n`
+        msg += stack[1] + '\n' + stack[2]
+        console.error(msg)
+        process.exit(-1)
+    }
 }
 
 /**
@@ -72,14 +79,14 @@ function parseBlock(block, variables, depth) {
 }
 
 
-function parseCommandArgs(commandArgs) {
+function parseCommandArgs(commandArgs, variables) {
     let result = ''
     for (const arg of commandArgs) {
         if (arg.type === 'literal') {
             result += arg.data
         }
         else {
-            result += evaluate(arg.data)
+            result += evaluate(arg.data, variables, arg.line)
         }
     }
     return result
@@ -101,13 +108,12 @@ function parseContent(blockContent, variables, depth) {
                 result += parseBlock(statement, variables, depth)
                 break
             case 'assignment':
-                evaluate(`${statement.name}${statement.value}`, variables)
+                evaluate(`${statement.name} ${statement.value}`, variables)
                 break
             case 'command':
-                result += `${statement.command} ${parseCommandArgs(statement.value)}\n`
+                result += `${statement.command} ${parseCommandArgs(statement.value, variables)}\n`
                 break
             case 'comment':
-                result += statement.comment + '\n'
                 break
             default:
                 let error = `Incorrect statement type "${type}"\n`
@@ -157,7 +163,10 @@ function parseFile(fileName) {
 
     let result = results[0]
 
-    return parseContent(result, {}, 0)
+    // Following libraries are imported in order to be used within minescripts.
+    let variables = {require: require, Vector: require('../vector')}
+    let context = vm.createContext(variables)
+    return parseContent(result, context, 0)
 }
 
 module.exports = parseFile

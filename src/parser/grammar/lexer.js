@@ -14,6 +14,22 @@ function until(string, quantifier = "+") {
 }
 
 /**
+ * Get a regular expression, matching everything between the start and the end strings
+ * (including themself).
+ * @param {string} start the start of the regular expression
+ * @param {string} end the end of the regular expression
+ * @param {boolean} [canBeEmpty = false] if true, then it's possible to have nothing between start and end
+ *                                      - else at least 1 character is required
+ */
+function between(start, end, canBeEmpty = false) {
+    let quantifier = "+"
+    if (canBeEmpty) {
+        quantifier = "*"
+    }
+    return addRegex(new RegExp(start), until(end, quantifier), new RegExp(end))
+}
+
+/**
  * Add multiple regex by chaining them
  * @param regexs the sum of the regular expressions
  */
@@ -47,6 +63,12 @@ let states = {
             push: 'assignmentBlock'
         },
         command: {match: /[a-z]+ /, push: 'commandBlock', value: s => s.trim()},
+        expression: {
+            match: between("{{", "}}", true),
+            push: 'commandBlock',
+            value: s => s.slice(2, -2).trim(),
+            lineBreaks: true
+        }
     },
 
     controlBlock: {
@@ -66,7 +88,7 @@ let states = {
     commandBlock: {
         literal: {match: until("{{"), lineBreaks: false},
         expression: {
-            match: addRegex(/{{/, until("}}"), /}}/),
+            match: between("{{", "}}", true),
             value: s => s.slice(2, -2).trim(),
             lineBreaks: true,
         },

@@ -24,7 +24,7 @@
 @lexer lexer
 
 # The programs first "level" of code is a block of statements
-main -> statementBlock {% data => data[0] %}
+main -> statementBlock {% id %}
 
 # A block is a block of statements surrounded by control statements
 block -> controlStatement blockInside endControlStatement {% data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})%}
@@ -32,7 +32,7 @@ block -> controlStatement blockInside endControlStatement {% data => ({type: 'bl
 controlStatement -> "{%" _ %conditional __ %condition _ "%}"  {% data => {
     const conditional = data[2].value
     conditionStack.push(conditional)
-    return {conditional: conditional, condition: data[4].value}
+    return {conditional: conditional, condition: data[4].value, line: data[2].line}
 }%}
 
 endControlStatement -> "{%" _ %conditionalEnd _ "%}" {% (data, loc, reject) => {
@@ -44,7 +44,7 @@ endControlStatement -> "{%" _ %conditionalEnd _ "%}" {% (data, loc, reject) => {
         return reject
     }
     
-    return {conditional: conditionalEnd, condition: null}
+    return {conditional: conditionalEnd, condition: null, line: data[2].line}
 }%}
 
 # A block can be empty inside
@@ -59,24 +59,28 @@ statementBlock -> null {% () => [] %}
 # A statement can be a block too!
 statement -> _ statement_ _ {% data => data[1] %}
 statement_ -> block {% id %}
+            | initialExpression {% id %}
             | minecraftComment {% id %}
             | minecraftCommand {% id %}
             | valueAssignment {% id %}
 
 # A minecraft comment starts with a '#' and can be followed by absolutely anything.     
-minecraftComment -> "#" _ %comment {% data => ({type: 'comment', comment: data.join('')}) %}
+minecraftComment -> "#" _ %comment {% data => ({type: 'comment', comment: data.join(''), line: data[2].line}) %}
 
 # A value assignment is a variables name, followed by "=" and then by a value
-valueAssignment -> %valueLeft _ %valueRight:? {% data => ({type: 'assignment', name: data[0].value, value: data[2] ? data[2].value : undefined}) %}
+valueAssignment -> %valueLeft _ %valueRight:? {% data => ({type: 'assignment', name: data[0].value, value: data[2] ? data[2].value : undefined, line: data[0].line}) %}
+
+# An expression starting the line (has to evaluate to a minecraft command)
+initialExpression -> %expression commandValue_:? {% data => ({type: 'initialExpression', initialExpression: data[0], value: data[1], line: data[0].line})%}
 
 # A minecraft command
-minecraftCommand -> %command commandValue {% data => ({type: 'command', command: data[0].value, value: data[1]})%}
+minecraftCommand -> %command commandValue {% data => ({type: 'command', command: data[0].value, value: data[1], line: data[0].line})%}
 
 commandValue -> commandValue_ {% data => [data[0]] %}
               | commandValue_ commandValue {% data => addToArray(data[1], data[0]) %}
 
-commandValue_ -> %literal  {% data => ({type: 'literal', data: data[0].value}) %}
-               | %expression {% data => ({type: 'expression', data: data[0].value}) %}
+commandValue_ -> %literal  {% data => ({type: 'literal', data: data[0].value, line: data[0].line}) %}
+               | %expression {% data => ({type: 'expression', data: data[0].value, line: data[0].line}) %}
 
 _ -> null | %ws {% id%}
 __ -> %ws {% id %}
