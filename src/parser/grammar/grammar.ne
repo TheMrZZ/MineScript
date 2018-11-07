@@ -24,7 +24,7 @@
 @lexer lexer
 
 # The programs first "level" of code is a block of statements
-main -> statementBlock {% id %}
+main -> _ (___|null) statementBlock (___|null) _ {% data => data[2] %}
 
 # A block is a block of statements surrounded by control statements
 block -> controlStatement blockInside endControlStatement {% data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})%}

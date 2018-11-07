@@ -26,7 +26,11 @@ function id(x) { return x[0]; }
 var grammar = {
     Lexer: lexer,
     ParserRules: [
-    {"name": "main", "symbols": ["statementBlock"], "postprocess": id},
+    {"name": "main$subexpression$1", "symbols": ["___"]},
+    {"name": "main$subexpression$1", "symbols": []},
+    {"name": "main$subexpression$2", "symbols": ["___"]},
+    {"name": "main$subexpression$2", "symbols": []},
+    {"name": "main", "symbols": ["_", "main$subexpression$1", "statementBlock", "main$subexpression$2", "_"], "postprocess": data => data[2]},
     {"name": "block", "symbols": ["controlStatement", "blockInside", "endControlStatement"], "postprocess": data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})},
     {"name": "controlStatement", "symbols": [{"literal":"{%"}, "_", (lexer.has("conditional") ? {type: "conditional"} : conditional), "__", (lexer.has("condition") ? {type: "condition"} : condition), "_", {"literal":"%}"}], "postprocess":  data => {
             const conditional = data[2].value

@@ -1,5 +1,4 @@
 const moo = require('moo')
-const options = require('../../argumentParser')
 
 /**
  * Get a regular expression, matching everything until the given string.
@@ -119,8 +118,3 @@ for (let stateName in states) {
 
 const lexer = moo.states(states)
 module.exports = {lexer, conditionals}
-
-if (options.debug) {
-    console.log('STATES:')
-    console.log(JSON.stringify(states, null, 2), '\n\n')
-}
