@@ -22,17 +22,20 @@ function normalizeCondition(expression) {
  * @param {string} expression the expression to evaluate
  * @param {object} variables the current variables
  * @param {int} line line of the current expression
+ * @param {string=} currentExpression (optional) the full expression. Will not be evaluated, but is displayed on error.
+ *                  Useful only a part of an expression is evaluated.
  * @return {*} the result of the expression
  */
-function evaluate(expression, variables, line) {
+function evaluate(expression, variables, line, currentExpression) {
     try {
         return vm.runInContext(expression, variables)
     }
     catch (e) {
+        let expressionToDisplay = currentExpression === undefined ? expression : currentExpression
         let stack = e.stack.split('\n')
         let msg = `[${e.name}] ${e.message}\n`
         msg += stack[1] + '\n' + stack[2] + '\n'
-        msg += `Erroneous expression [line ${line}]:\n${expression}\n`
+        msg += `Erroneous expression [line ${line}]:\n${expressionToDisplay}\n`
         console.error(msg)
         process.exit(-1)
     }
@@ -47,23 +50,24 @@ function evaluate(expression, variables, line) {
  * @returns {string} the result of the parsing
  */
 function parseBlock(block, variables, depth) {
-    const conditionDisplay = `{% ${block.control.conditional} ${block.control.condition} %}`
+    const control = block.control
+    const conditionDisplay = `{% ${control.conditional} ${control.condition} %}`
 
     let result = ''
     let argument = normalizeCondition(block.control.condition)
 
-    if (block.control.conditional === 'if') {
-        if (evaluate(argument, variables, block.control.line)) {
+    if (control.conditional === 'if') {
+        if (evaluate(argument, variables, control.line, conditionDisplay)) {
             result = parseContent(block.content, variables, depth + 1)
         }
         return result
     }
 
-    if (block.control.conditional === 'while') {
+    if (control.conditional === 'while') {
         let numberOfLoops = 0
         let warning = 10000
 
-        while (evaluate(argument, variables, block.control.line)) {
+        while (evaluate(argument, variables, control.line, conditionDisplay)) {
             result += parseContent(block.content, variables, depth + 1)
 
             if (options.warnings) {
@@ -144,6 +148,12 @@ function parseFile(fileName) {
     }
 
     let results = parser.results
+    if (results.length === 0) {
+        console.error('Minescript compilation failed for an unknown reason.\n' +
+        'Check if every condition block {% if ... %}, {% while ... %}} ' +
+        'has a corresponding end block: {% endif %}, {% endwhile %}...')
+        process.exit(1)
+    }
 
     if (options.debug) {
         console.log('RESULTS:')
