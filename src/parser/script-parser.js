@@ -157,6 +157,9 @@ function parseContent(blockContent, variables, depth) {
                 result.add(`${statement.command} ${parseCommandArgs(statement.value, variables)}`)
                 break
             case 'comment':
+                if (statement.comment.startsWith('##')) {
+                    result.add(statement.comment.slice(1))
+                }
                 break
             case 'initialExpression':
                 result.add(evaluate(statement.expression, variables, statement.line) +
