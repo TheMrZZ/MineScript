@@ -23,7 +23,11 @@ file.walk(program.inputFolder, (err, dirPath, dirs, files) => {
 
         const result = scriptParser(string)
         const outputFile = getOutputFile(program.inputFolder, relativeFilePath, 'functions', '.mcfunction')
-        console.log(result)
+
+        if (program.debug) {
+            console.log(result)
+        }
+
         fs.writeFile(outputFile, result.function.join('\n'), 'utf8', err => {
             if (err) {
                 console.error(err)
