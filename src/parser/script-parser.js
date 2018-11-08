@@ -32,8 +32,8 @@ class ParsedContent {
             this.function.push(parsedContent.trim())
             return
         }
-        this.function.concat(parsedContent.function)
-        this.onLoad.concat(parsedContent.onLoad)
+        this.function = this.function.concat(parsedContent.function)
+        this.onLoad = this.onLoad.concat(parsedContent.onLoad)
         this.repeat = parsedContent.repeat
     }
 }
@@ -157,6 +157,9 @@ function parseContent(blockContent, variables, depth) {
                 result.add(`${statement.command} ${parseCommandArgs(statement.value, variables)}`)
                 break
             case 'comment':
+                if (statement.comment.startsWith('##')) {
+                    result.add(statement.comment.slice(1))
+                }
                 break
             case 'initialExpression':
                 result.add(evaluate(statement.expression, variables, statement.line) +
@@ -190,6 +193,9 @@ function parse(string, options_) {
     }
     let context = vm.createContext(variables)
     let parsed = parseContent(content, context, 0)
+    if (!options.noFooter) {
+        parsed.add('# Created with MineScript: https://github.com/TheMrZZ/MineScript')
+    }
     return parsed
 }
 

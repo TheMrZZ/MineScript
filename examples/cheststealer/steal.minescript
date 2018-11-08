@@ -1,0 +1,5 @@
+## Author: TheMrZZ - u/TheMrZZ0
+
+function cheststealer:count
+function cheststealer:give
+function cheststealer:clear
