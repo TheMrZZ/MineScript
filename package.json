@@ -8,8 +8,10 @@
     "commander": "^2.19.0",
     "expr-eval": "^1.2.2",
     "file": "^0.2.2",
+    "mocha": "^5.2.0",
     "moo": "^0.4.3",
-    "nearley": "^2.15.1"
+    "nearley": "^2.15.1",
+    "rewire": "^4.0.1"
   },
   "devDependencies": {},
   "scripts": {

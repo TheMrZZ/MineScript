@@ -18,9 +18,11 @@ file.walk(program.inputFolder, (err, dirPath, dirs, files) => {
             return
         }
 
-        const result = scriptParser(relativeFilePath)
+        const string = fs.readFileSync(relativeFilePath, 'utf8')
+
+        const result = scriptParser(string)
         const outputFile = getOutputFile(relativeFilePath, 'functions', '.mcfunction')
-        console.log(outputFile)
+        console.log(result)
         fs.writeFile(outputFile, result, 'utf8', err => {
             if (err) {
                 console.error(err)
