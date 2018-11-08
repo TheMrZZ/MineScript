@@ -1,5 +1,4 @@
 const program = require('commander')
-const path = require('path')
 
 let inputFolder = ''
 let outputFolder = ''
@@ -29,5 +28,6 @@ module.exports = {
     inputFolder: inputFolder,
     outputFolder: outputFolder,
     warnings: program.warnings || program.debug || false,
-    debug: program.debug || false,
+    logDebug: program.debug ? console.log : () => undefined,
+    debug: program.debug || false
 }
