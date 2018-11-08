@@ -32,8 +32,8 @@ class ParsedContent {
             this.function.push(parsedContent.trim())
             return
         }
-        this.function.concat(parsedContent.function)
-        this.onLoad.concat(parsedContent.onLoad)
+        this.function = this.function.concat(parsedContent.function)
+        this.onLoad = this.onLoad.concat(parsedContent.onLoad)
         this.repeat = parsedContent.repeat
     }
 }
