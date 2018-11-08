@@ -193,6 +193,9 @@ function parse(string, options_) {
     }
     let context = vm.createContext(variables)
     let parsed = parseContent(content, context, 0)
+    if (!options.noFooter) {
+        parsed.add('# Created with MineScript: https://github.com/TheMrZZ/MineScript')
+    }
     return parsed
 }
 

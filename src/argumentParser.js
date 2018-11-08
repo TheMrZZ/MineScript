@@ -12,6 +12,7 @@ program
     .option('-w, --warnings', 'Activates the warnings.')
     .option('-d, --debug', 'Activate the debug mode. Only useful for Minescript developers - not for users.')
     .option('-q, --quiet', "Don't show log messages. Errors will still be displayed.")
+    .option('--no-footer', 'Hide the "Created with MineScript" comment at the end of functions.')
     .parse(process.argv)
 
 if (!process.argv.slice(2).length) {
@@ -35,5 +36,6 @@ module.exports = {
     outputFolder: outputFolder,
     warnings: program.warnings || program.debug || false,
     logDebug: program.debug ? console.log : () => undefined,
-    debug: program.debug || false
+    debug: program.debug || false,
+    noFooter: program.noFooter || false,
 }
