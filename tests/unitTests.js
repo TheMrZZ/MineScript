@@ -6,7 +6,7 @@ const scriptParser = rewire('../src/parser/script-parser')
 describe('script-parser', () => {
     const originalParse = scriptParser.__get__('parse')
     const options = {debug: true, logDebug: () => undefined}
-    const parse = string => originalParse(string, options)
+    const parse = string => originalParse(string, options).function.join('\n')
 
     describe('grammar', function () {
         it('should ignore whitespaces surrounding statements', function () {
@@ -86,7 +86,5 @@ describe('script-parser', () => {
         it('should not unescape characters in String.raw', function () {
             assert.equal(parse('arg=String.raw`"hi\\nPlayer"`\nsay {{arg}}'), 'say "hi\\nPlayer"')
         })
-
-
     })
 })

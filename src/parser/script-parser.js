@@ -5,6 +5,41 @@ const grammar = require('./grammar/grammar')
 let options = {}
 
 /**
+ * @class ParsedContent
+ * @property {string[]} function the content of the resulting function
+ * @property {string[]} onLoad the content to add to the onLoad file
+ * @property {int} repeat the number of ticks between each repetition
+ */
+class ParsedContent {
+    /**
+     * Create a {@link ParsedContent} object, with:
+     * - onLoad set to []
+     * - function set to []
+     * - repeat set to 0
+     */
+    constructor() {
+        this.onLoad = []
+        this.function = []
+        this.repeat = 0
+    }
+
+    /**
+     * Add a parsed content to the current parsed content.
+     * If a string is given, then it will trim it, then add it.
+     * @param {ParsedContent|string} parsedContent the parsed content to add - or a string to add to the function file
+     */
+    add(parsedContent) {
+        if (typeof parsedContent === 'string') {
+            this.function.push(parsedContent.trim())
+            return
+        }
+        this.function.concat(parsedContent.function)
+        this.onLoad.concat(parsedContent.onLoad)
+        this.repeat = parsedContent.repeat
+    }
+}
+
+/**
  * Normalize a condition, for example by putting === instead of ==
  */
 function normalizeCondition(expression) {
@@ -38,18 +73,18 @@ function evaluate(expression, variables, line, currentExpression) {
 }
 
 /**
- * Parse a control block (if, while...)
+ * Parse any block
  * @param block the control block
  * @param variables the variables of the current scope
  * @param depth depth of the current block
  * @depth the depth of the current block
- * @returns {string} the result of the parsing
+ * @returns {ParsedContent} the result of the parsing
  */
 function parseBlock(block, variables, depth) {
     const control = block.control
     const conditionDisplay = `{% ${control.conditional} ${control.condition} %}`
 
-    let result = ''
+    let result = new ParsedContent()
     let argument = normalizeCondition(block.control.condition)
 
     if (control.conditional === 'if') {
@@ -64,7 +99,7 @@ function parseBlock(block, variables, depth) {
         let warning = 10000
 
         while (evaluate(argument, variables, control.line, conditionDisplay)) {
-            result += parseContent(block.content, variables, depth + 1)
+            result.add(parseContent(block.content, variables, depth + 1))
 
             if (options.warnings) {
                 numberOfLoops++
@@ -78,7 +113,12 @@ function parseBlock(block, variables, depth) {
     }
 }
 
-
+/**
+ * Parse command args
+ * @param commandArgs the arguments to parse
+ * @param variables the current variables
+ * @return {string} the result of the parsing
+ */
 function parseCommandArgs(commandArgs, variables) {
     if (!commandArgs) {
         return ''
@@ -101,38 +141,34 @@ function parseCommandArgs(commandArgs, variables) {
  * @param blockContent the content of a block - a group of statements
  * @param variables the current variables
  * @param depth the depth of the current block content
- * @returns {string} the result of the parsing
+ * @returns {ParsedContent} the result of the parsing
  */
 function parseContent(blockContent, variables, depth) {
-    let result = ''
+    let result = new ParsedContent()
+
     for (const statement of blockContent) {
         const type = statement.type
-        let subResult
         switch (type) {
             case 'block':
-                subResult = parseBlock(statement, variables, depth)
+                result.add(parseBlock(statement, variables, depth))
                 break
             case 'assignment':
                 evaluate(`${statement.name} ${statement.value}`, variables, statement.line)
                 break
             case 'command':
-                subResult = `${statement.command} ${parseCommandArgs(statement.value, variables)}`
+                result.add(`${statement.command} ${parseCommandArgs(statement.value, variables)}`)
                 break
             case 'comment':
                 break
             case 'initialExpression':
-                subResult = evaluate(statement.expression, variables, statement.line) +
-                            parseCommandArgs(statement.value, variables)
+                result.add(evaluate(statement.expression, variables, statement.line) +
+                           parseCommandArgs(statement.value, variables))
                 break
             default:
                 let error = `Incorrect statement type "${type}"\n`
                 error += 'This case is not supposed to be possible. There is an error in the program itself.\n'
                 error += 'Problematic statement:\n' + JSON.stringify(statement, null, 2)
                 throw new Error(error)
-        }
-
-        if (subResult !== undefined) {
-            result += subResult.trim() + '\n'
         }
     }
 
@@ -143,7 +179,7 @@ function parseContent(blockContent, variables, depth) {
  * Parse a file and returns the result of the parse
  * @param {string} string the string to parse
  * @param options_ the options of the parser
- * @returns {string} the result of the parsing
+ * @returns {ParsedContent} the result of the parsing
  */
 function parse(string, options_) {
     const reportMessage = 'You can report at https://github.com/TheMrZZ/MineScript/issues.\n' +
@@ -214,7 +250,8 @@ function parse(string, options_) {
         Vector: require('../vector'),
     }
     let context = vm.createContext(variables)
-    return parseContent(result, context, 0).trim()
+    let parsed = parseContent(result, context, 0)
+    return parsed
 }
 
 module.exports = parse
