@@ -6,9 +6,10 @@ const colors = require('colors') // Do not remove - side-effects are used
 const program = require('./src/argumentParser')
 const scriptParser = require('./src/parser/script-parser')
 
-function getOutputFile(relativeInputFile, subFolder, extension) {
-    let inputFile = path.parse(relativeInputFile)
-    let outputFile = path.join(program.outputFolder, subFolder, inputFile.dir, '../', inputFile.name + extension)
+function getOutputFile(inputFolder, relativeInputFile, subFolder, extension) {
+    let relativeOutputFile = path.dirname(path.relative(inputFolder, relativeInputFile))
+    let name = path.parse(relativeInputFile).name
+    let outputFile = path.join(program.outputFolder, relativeOutputFile, subFolder, name + extension)
     return outputFile
 }
 
@@ -21,17 +22,16 @@ file.walk(program.inputFolder, (err, dirPath, dirs, files) => {
         const string = fs.readFileSync(relativeFilePath, 'utf8')
 
         const result = scriptParser(string)
-        const outputFile = getOutputFile(relativeFilePath, 'functions', '.mcfunction')
+        const outputFile = getOutputFile(program.inputFolder, relativeFilePath, 'functions', '.mcfunction')
         console.log(result)
-        fs.writeFile(outputFile, result, 'utf8', err => {
+        fs.writeFile(outputFile, result.function.join('\n'), 'utf8', err => {
             if (err) {
                 console.error(err)
                 throw err
             }
-            else {
+            else if (!program.quiet) {
                 console.log(`[${relativeFilePath}] Compilation successful!`.green)
             }
         })
     })
 })
-
