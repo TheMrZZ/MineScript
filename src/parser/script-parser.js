@@ -1,6 +1,5 @@
-const nearley = require('nearley')
 const vm = require('vm')
-const grammar = require('./grammar/grammar')
+const nearleyParser = require('./nearley-parser')
 
 let options = {}
 
@@ -74,10 +73,9 @@ function evaluate(expression, variables, line, currentExpression) {
 
 /**
  * Parse any block
- * @param block the control block
- * @param variables the variables of the current scope
- * @param depth depth of the current block
- * @depth the depth of the current block
+ * @param {Object} block the control block
+ * @param {Object} variables the variables of the current scope
+ * @param {int} depth depth of the current block
  * @returns {ParsedContent} the result of the parsing
  */
 function parseBlock(block, variables, depth) {
@@ -138,9 +136,9 @@ function parseCommandArgs(commandArgs, variables) {
 
 /**
  * Parse the content of a block
- * @param blockContent the content of a block - a group of statements
- * @param variables the current variables
- * @param depth the depth of the current block content
+ * @param {Object[]} blockContent the content of a block - a group of statements
+ * @param {Object} variables the current variables
+ * @param {int} depth the depth of the current block content
  * @returns {ParsedContent} the result of the parsing
  */
 function parseContent(blockContent, variables, depth) {
@@ -182,75 +180,16 @@ function parseContent(blockContent, variables, depth) {
  * @returns {ParsedContent} the result of the parsing
  */
 function parse(string, options_) {
-    const reportMessage = 'You can report at https://github.com/TheMrZZ/MineScript/issues.\n' +
-                          'Please include the file you parsed and this error message to your report.'
-
-    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), {keepHistory: true})
     Object.assign(options, options_)
 
-    try {
-        parser.feed(string)
-    }
-    catch (error) {
-        throw error
-        //handleErrors(error, parser)
-        //process.exit(1)
-    }
-
-    let results = parser.results
-    if (results.length === 0) {
-        throw new SyntaxError('Minescript compilation failed for an unknown reason.\n' +
-                              'Check if every condition block {% if ... %}, {% while ... %}} ' +
-                              'has a corresponding end block: {% endif %}, {% endwhile %}...\n' +
-                              reportMessage)
-    }
-
-
-    if (results.length > 2) {
-        /* This should NEVER happens in production.
-         * If this happens, to avoid problems, if every
-         * given result is the same, we display a warning,
-         * but will take any result (since they're all the same)
-         */
-        let identical = true
-
-        options.logDebug('RESULTS:')
-        options.logDebug(JSON.stringify(results, null, 2))
-
-        for (let i = 1; i < results.length; i++) {
-            if (JSON.stringify(results[i - 1]) === JSON.stringify(results[i])) {
-                options.logDebug(`Results ${i - 1} and ${i} are IDENTICAL`)
-            }
-            else {
-                options.logDebug(`Results ${i - 1} and ${i} are DIFFERENT`)
-                identical = false
-            }
-        }
-
-        if (identical) {
-            console.log("A minor bug happened - don't worry, it should not cause you any problem.")
-            console.log('However, we would be glad if you could report the file you parsed along with this message.')
-            console.log(reportMessage)
-            if (options.debug) {
-                throw new SyntaxError('Parser gave multiple identical results')
-            }
-        }
-        else {
-            throw new SyntaxError('Parser gave different possible results. ' +
-                                  'This should not happen and is not your fault - its our.\n' +
-                                  reportMessage)
-        }
-    }
-
-    let result = results[0]
-
+    let content = nearleyParser(string, options)
     // Following libraries are imported in order to be used within minescripts.
     let variables = {
         require: require,
         Vector: require('../vector'),
     }
     let context = vm.createContext(variables)
-    let parsed = parseContent(result, context, 0)
+    let parsed = parseContent(content, context, 0)
     return parsed
 }
 
