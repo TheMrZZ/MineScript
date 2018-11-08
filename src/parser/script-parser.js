@@ -1,125 +1,196 @@
-const Parser = require('expr-eval').Parser
-const fs = require('fs')
-const colors = require('colors')
-const path = require('path')
+const vm = require('vm')
+const nearleyParser = require('./nearley-parser')
 
-/* Matches: an identifier, then possibly whitespaces,
- *          then 1 non-quote character (to be sure that
- *          this is not a string), then anything.
- *          -- variable = sin(PI/2)
- */
-const numberDeclaration = /^(\w+)\s*=\s*([^"\s].*)\s*$/
-
-// Matches a literal string -- variable = "abc"
-const stringDeclaration = /^(\w+)\s*=\s*"\s*(.+)\s*"\s*$/
-
-// Matches a variable use with no backslash before brackets -- {{ variable }}
-const variableUse = /(?!\\){{\s*(.+)\s*(?!\\)}}/g
-
-const toReplace = [
-    [/(?!\\)\}}/, '}}'],
-    [/(?!\\)\{{/, '{{']
-]
-let errors = 0
-
-colors.setTheme({
-    success: 'green'
-})
+let options = {}
 
 /**
- * Takes a line & replace the expressions by their values
- * e.g.: variables = { x: 85 }, line = "ab {{ x }}",
- *       result = "ab 85"
- * @param line      {String} the line to evaluate
- * @param variables {Object} the variables of the expression
- * @returns         {String} the line with the evaluated expressions
+ * @class ParsedContent
+ * @property {string[]} function the content of the resulting function
+ * @property {string[]} onLoad the content to add to the onLoad file
+ * @property {int} repeat the number of ticks between each repetition
  */
-function evaluateExpressions(line, variables) {
-    line = line.replace(variableUse, (fullMatch, expression) => {
-        const expr = Parser.parse(expression)
-        const value = expr.evaluate(variables)
+class ParsedContent {
+    /**
+     * Create a {@link ParsedContent} object, with:
+     * - onLoad set to []
+     * - function set to []
+     * - repeat set to 0
+     */
+    constructor() {
+        this.onLoad = []
+        this.function = []
+        this.repeat = 0
+    }
 
-        if (Number.isNaN(value)) {
-            const notNumbers = expr.symbols().filter(v => {
-                return isNaN(variables[v])
-            }).map(v => {
-                return `${v}='${variables[v]}'`
-            })
-            const error = `Error: ${fullMatch} has non-numbers operands (${notNumbers.join(', ')}).`
-            console.error(error)
-            console.error('Mathematical operations can be performed on numbers only.')
-            errors++
+    /**
+     * Add a parsed content to the current parsed content.
+     * If a string is given, then it will trim it, then add it.
+     * @param {ParsedContent|string} parsedContent the parsed content to add - or a string to add to the function file
+     */
+    add(parsedContent) {
+        if (typeof parsedContent === 'string') {
+            this.function.push(parsedContent.trim())
+            return
         }
-        return value
-    })
-
-    return line
+        this.function.concat(parsedContent.function)
+        this.onLoad.concat(parsedContent.onLoad)
+        this.repeat = parsedContent.repeat
+    }
 }
 
 /**
- * Changes the extension of a file for a given one
- * @param fileName      {String} the name of the file to change the extension
- * @param newExtension  {String} the new extension
- * @return              {String} the new file name.
+ * Normalize a condition, for example by putting === instead of ==
  */
-function changeFileExtension(fileName, newExtension) {
-    const nameParse = path.parse(fileName)
-    const nameWithoutExtension = path.join(nameParse.dir, nameParse.name)
-    const newName = nameWithoutExtension + '.' + newExtension
-    return newName
+function normalizeCondition(expression) {
+    expression = expression.replace(/==(?!=)/, "===")
+    return expression
 }
 
 /**
- * Compile a .mcscript file to a .mcfunction file
- * @param fileName name of the file to parse
- * @param variables default variables
+ * Evaluates a javascript expression. Returns its result,
+ * and modify the variables if needed.
+ * @param {string} expression the expression to evaluate
+ * @param {object} variables the current variables
+ * @param {int} line line of the current expression
+ * @param {string=} currentExpression (optional) the full expression. Will not be evaluated, but is displayed on error.
+ *                  Useful only a part of an expression is evaluated.
+ * @return {*} the result of the expression
  */
-function parse(fileName, variables = {}) {
-    const parser = new Parser()
-    let errors = 0
+function evaluate(expression, variables, line, currentExpression) {
+    try {
+        return vm.runInContext(expression, variables)
+    }
+    catch (e) {
+        let expressionToDisplay = currentExpression === undefined ? expression : currentExpression
+        let stack = e.stack.split('\n')
+        let msg = `[${e.name}] ${e.message}\n`
+        msg += stack[1] + '\n' + stack[2] + '\n'
+        msg += `Erroneous expression [line ${line}]:\n${expressionToDisplay}\n`
+        console.error(msg)
+        throw e
+    }
+}
 
-    fs.readFile(fileName, 'utf8', (err, response) => {
-        let lines = response.split('\n')
-        let result = []
+/**
+ * Parse any block
+ * @param {Object} block the control block
+ * @param {Object} variables the variables of the current scope
+ * @param {int} depth depth of the current block
+ * @returns {ParsedContent} the result of the parsing
+ */
+function parseBlock(block, variables, depth) {
+    const control = block.control
+    const conditionDisplay = `{% ${control.conditional} ${control.condition} %}`
 
-        lines.forEach(line => {
-            const numberMatch = line.match(numberDeclaration)
-            const stringMatch = line.match(stringDeclaration)
-            const match = stringMatch || numberMatch
+    let result = new ParsedContent()
+    let argument = normalizeCondition(block.control.condition)
 
-            // If the line is a variable assignment, create the variable and don't put the line in the results
-            if (numberMatch || stringMatch) {
-                const name = match[1]
-                const value = match[2]
+    if (control.conditional === 'if') {
+        if (evaluate(argument, variables, control.line, conditionDisplay)) {
+            result = parseContent(block.content, variables, depth + 1)
+        }
+        return result
+    }
 
-                if (stringMatch) {
-                    variables[name] = value
+    if (control.conditional === 'while') {
+        let numberOfLoops = 0
+        let warning = 10000
+
+        while (evaluate(argument, variables, control.line, conditionDisplay)) {
+            result.add(parseContent(block.content, variables, depth + 1))
+
+            if (options.warnings) {
+                numberOfLoops++
+                if (numberOfLoops === warning) {
+                    console.warn('[WARNING]', conditionDisplay, 'executed', warning, 'times - might be an infinite loop')
+                    warning *= 10
                 }
-                else {
-                    variables[name] = parser.evaluate(value, variables)
-                }
-                return
             }
-
-            // Replace {{ variables }} by their values
-            line = evaluateExpressions(line, variables)
-
-            result.push(line.trim())
-        })
-
-        if (errors) {
-            console.error(`Compilation failed after ${errors} error${errors > 1 ? 's' : ''}.`)
-            process.exit(1)
         }
+        return result
+    }
+}
 
-        const finalText = result.join('\n').trim()
-        const newFileName = changeFileExtension(fileName, 'mcfunction')
+/**
+ * Parse command args
+ * @param commandArgs the arguments to parse
+ * @param variables the current variables
+ * @return {string} the result of the parsing
+ */
+function parseCommandArgs(commandArgs, variables) {
+    if (!commandArgs) {
+        return ''
+    }
 
-        fs.writeFile(newFileName, finalText, 'utf8', err => {
-            if (err) console.error(err)
-            else console.log('Minecraft script was successfully compiled into a Minecraft function!'.success)
-        })
-    })
+    let result = ''
+    for (const arg of commandArgs) {
+        if (arg.type === 'literal') {
+            result += arg.data
+        }
+        else {
+            result += evaluate(arg.data, variables, arg.line)
+        }
+    }
+    return result
+}
+
+/**
+ * Parse the content of a block
+ * @param {Object[]} blockContent the content of a block - a group of statements
+ * @param {Object} variables the current variables
+ * @param {int} depth the depth of the current block content
+ * @returns {ParsedContent} the result of the parsing
+ */
+function parseContent(blockContent, variables, depth) {
+    let result = new ParsedContent()
+
+    for (const statement of blockContent) {
+        const type = statement.type
+        switch (type) {
+            case 'block':
+                result.add(parseBlock(statement, variables, depth))
+                break
+            case 'assignment':
+                evaluate(`${statement.name} ${statement.value}`, variables, statement.line)
+                break
+            case 'command':
+                result.add(`${statement.command} ${parseCommandArgs(statement.value, variables)}`)
+                break
+            case 'comment':
+                break
+            case 'initialExpression':
+                result.add(evaluate(statement.expression, variables, statement.line) +
+                           parseCommandArgs(statement.value, variables))
+                break
+            default:
+                let error = `Incorrect statement type "${type}"\n`
+                error += 'This case is not supposed to be possible. There is an error in the program itself.\n'
+                error += 'Problematic statement:\n' + JSON.stringify(statement, null, 2)
+                throw new Error(error)
+        }
+    }
+
+    return result
+}
+
+/**
+ * Parse a file and returns the result of the parse
+ * @param {string} string the string to parse
+ * @param options_ the options of the parser
+ * @returns {ParsedContent} the result of the parsing
+ */
+function parse(string, options_) {
+    Object.assign(options, options_)
+
+    let content = nearleyParser(string, options)
+    // Following libraries are imported in order to be used within minescripts.
+    let variables = {
+        require: require,
+        Vector: require('../vector'),
+    }
+    let context = vm.createContext(variables)
+    let parsed = parseContent(content, context, 0)
+    return parsed
 }
 
 module.exports = parse
