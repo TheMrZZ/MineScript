@@ -5,7 +5,7 @@ const scriptParser = rewire('../src/parser/script-parser')
 
 describe('script-parser', () => {
     const originalParse = scriptParser.__get__('parse')
-    const options = {debug: true, logDebug: () => undefined}
+    const options = {debug: true, logDebug: () => undefined, noFooter: true}
     const parse = string => originalParse(string, options).function.join('\n')
 
     describe('grammar', function () {
