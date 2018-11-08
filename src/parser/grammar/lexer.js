@@ -5,10 +5,12 @@ const moo = require('moo')
  * It will match the given string too if it is escaped by a backslash
  * @param  {string} string the string until which the regex will match
  * @param {string} [quantifier = "+"] the final quantifier
+ * @param {boolean} [multiLine = true] if true, then the regex will match multiple lines
  * @return {RegExp} a regular expression matching everything until the given string
  */
-function until(string, quantifier = "+") {
-    let regex = String.raw`(?:\\${string}|(?!${string}).)+`
+function until(string, quantifier = "+", multiLine = false) {
+    let singleChar = multiLine ? "[^]" : "."
+    let regex = String.raw`(?:\\${string}|(?!${string})${singleChar})${quantifier}`
     return RegExp(regex)
 }
 
@@ -19,13 +21,15 @@ function until(string, quantifier = "+") {
  * @param {string} end the end of the regular expression
  * @param {boolean} [canBeEmpty = false] if true, then it's possible to have nothing between start and end
  *                                      - else at least 1 character is required
+ * @param {boolean} [multiLine = true] if true, then the regex will match multiple lines
+ * @return {RegExp} a regex matching everything between start & end included
  */
-function between(start, end, canBeEmpty = false) {
+function between(start, end, canBeEmpty = false, multiLine = false) {
     let quantifier = "+"
     if (canBeEmpty) {
         quantifier = "*"
     }
-    return addRegex(new RegExp(start), until(end, quantifier), new RegExp(end))
+    return addRegex(new RegExp(start), until(end, quantifier, multiLine), new RegExp(end))
 }
 
 /**
@@ -63,7 +67,7 @@ let states = {
         },
         command: {match: /[a-z]+ /, push: 'commandBlock', value: s => s.trim()},
         expression: {
-            match: between("{{", "}}", true),
+            match: between("{{", "}}", true, true),
             push: 'commandBlock',
             value: s => s.slice(2, -2).trim(),
             lineBreaks: true
@@ -74,7 +78,7 @@ let states = {
         conditional: Object.keys(conditionals),
         conditionalEnd: Object.values(conditionals),
         condition: {
-            match: addRegex(/(?!\s)/, until("%}")),
+            match: addRegex(/(?!\s)/, until("%}", "+", true)),
             value: s => s.trim(),
             lineBreaks: true
         },
@@ -85,9 +89,9 @@ let states = {
     },
 
     commandBlock: {
-        literal: {match: until("{{"), lineBreaks: false},
+        literal: {match: until("{{", "+", false), lineBreaks: false},
         expression: {
-            match: between("{{", "}}", true),
+            match: between("{{", "}}", true, true),
             value: s => s.slice(2, -2).trim(),
             lineBreaks: true,
         },
