@@ -4,7 +4,7 @@ let inputFolder = ''
 let outputFolder = ''
 
 program
-    .version('1.0.0')
+    .version('0.0.0-alpha')
     .arguments('<inputFolder> <namespaceFolder>')
     .description('Compiles .mcscript or .minescript files located inside the given inputFolder.\n' +
         'The resulting .mcfunction files are stored inside the given namespaceFolder - located inside a datapack.')
