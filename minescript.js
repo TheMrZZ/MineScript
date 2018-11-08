@@ -29,7 +29,7 @@ file.walk(program.inputFolder, (err, dirPath, dirs, files) => {
                 console.error(err)
                 throw err
             }
-            else if (!program.quiet) {
+            else {
                 console.log(`[${relativeFilePath}] Compilation successful!`.green)
             }
         })

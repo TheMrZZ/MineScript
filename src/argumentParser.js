@@ -11,6 +11,7 @@ program
     .action((input, namespace) => { inputFolder = input; outputFolder = namespace; })
     .option('-w, --warnings', 'Activates the warnings.')
     .option('-d, --debug', 'Activate the debug mode. Only useful for Minescript developers - not for users.')
+    .option('-q, --quiet', "Don't show log messages. Errors will still be displayed.")
     .parse(process.argv)
 
 if (!process.argv.slice(2).length) {
@@ -22,6 +23,11 @@ function optionMissing(message) {
     console.error(message)
     program.outputHelp()
     process.exit(1)
+}
+
+// Disable stdout, but not stderr
+if (program.quiet) {
+    process.stdout.write = () => {};
 }
 
 module.exports = {
