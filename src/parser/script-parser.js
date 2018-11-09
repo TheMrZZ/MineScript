@@ -42,7 +42,9 @@ class ParsedContent {
  * Normalize a condition, for example by putting === instead of ==
  */
 function normalizeCondition(expression) {
-    expression = expression.replace(/==(?!=)/, "===")
+    if (expression) {
+        expression = expression.replace(/==(?!=)/, "===")
+    }
     return expression
 }
 
@@ -80,19 +82,24 @@ function evaluate(expression, variables, line, currentExpression) {
  */
 function parseBlock(block, variables, depth) {
     const control = block.control
-    const conditionDisplay = `{% ${control.conditional} ${control.condition} %}`
+    const conditional = control.conditional
+    const conditionDisplay = `{% ${conditional} ${control.condition} %}`
 
     let result = new ParsedContent()
     let argument = normalizeCondition(block.control.condition)
 
-    if (control.conditional === 'if') {
-        if (evaluate(argument, variables, control.line, conditionDisplay)) {
+    if (['if', 'elif', 'else'].includes(conditional)) {
+        if (conditional === 'else' || evaluate(argument, variables, control.line, conditionDisplay)) {
             result = parseContent(block.content, variables, depth + 1)
+        }
+        else if (block.else) {
+            result = parseBlock(block.else, variables, depth)
         }
         return result
     }
 
-    if (control.conditional === 'while') {
+
+    if (conditional === 'while') {
         let numberOfLoops = 0
         let warning = 10000
 
@@ -109,6 +116,14 @@ function parseBlock(block, variables, depth) {
         }
         return result
     }
+
+    if (conditional === 'for') {
+    }
+
+    let error = `Incorrect conditional statement "${conditional}"\n`
+    error += 'This case is not supposed to be possible. There is an error in the program itself.\n'
+    error += 'Problematic control block:\n' + JSON.stringify(control, null, 2)
+    throw new SyntaxError(error)
 }
 
 /**

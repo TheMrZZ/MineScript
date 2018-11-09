@@ -9,6 +9,10 @@ describe('script-parser', () => {
     const parse = string => originalParse(string, options).function.join('\n')
 
     describe('grammar', function () {
+        it('should accept empty file', function () {
+            assert.equal(parse(''), '')
+        })
+
         it('should ignore whitespaces surrounding statements', function () {
             assert.equal(parse('say hi\n  \t  say hi   \nsay hi'), 'say hi\nsay hi\nsay hi')
         })

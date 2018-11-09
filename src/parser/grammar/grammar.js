@@ -3,7 +3,7 @@
 (function () {
 function id(x) { return x[0]; }
 
-    const {lexer, conditionals} = require("./lexer")
+    const {lexer, conditionals, intermediateConditionals} = require("./lexer")
     
     const dataJoin = data => data.join('')
 
@@ -23,15 +23,6 @@ function id(x) { return x[0]; }
         return array
     }
 
-    /**
-     * Unescape a string
-     * @param string the string to unescape
-     * @return {string} the unescaped string
-     */
-    function unescape (string) {
-        
-    }
-
     let conditionStack = []
 var grammar = {
     Lexer: lexer,
@@ -42,22 +33,48 @@ var grammar = {
     {"name": "main$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
     {"name": "main", "symbols": ["main$ebnf$1", "statementBlock", "main$ebnf$2"], "postprocess": data => data[1]},
     {"name": "block", "symbols": ["controlStatement", "blockInside", "endControlStatement"], "postprocess": data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})},
-    {"name": "controlStatement", "symbols": [{"literal":"{%"}, "___", (lexer.has("conditional") ? {type: "conditional"} : conditional), "ws", (lexer.has("condition") ? {type: "condition"} : condition), "___", {"literal":"%}"}], "postprocess":  data => {
+    {"name": "block", "symbols": ["controlStatement", "blockInside", "intermediateControlBlock"], "postprocess": data => ({type: 'block', control: data[0], content: data[1], else: data[2], controlEnd: data[2].controlEnd})},
+    {"name": "intermediateControlBlock", "symbols": ["intermediateControlStatement", "blockInside", "endControlStatement"], "postprocess": data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})},
+    {"name": "intermediateControlBlock", "symbols": ["intermediateControlStatement", "blockInside", "intermediateControlBlock"], "postprocess": data => ({type: 'block', control: data[0], content: data[1], else: data[2], controlEnd: data[2].controlEnd})},
+    {"name": "controlStatement", "symbols": [{"literal":"{%"}, "___", (lexer.has("conditional") ? {type: "conditional"} : conditional), "condition", "___", {"literal":"%}"}], "postprocess":  data => {
+            // Add this control statement to the stack
             const conditional = data[2].value
             conditionStack.push(conditional)
-            return {conditional: conditional, condition: data[4].value, line: data[2].line}
+            return {conditional: conditional, condition: data[3], line: data[2].line}
         }},
-    {"name": "endControlStatement", "symbols": [{"literal":"{%"}, "___", (lexer.has("conditionalEnd") ? {type: "conditionalEnd"} : conditionalEnd), "___", {"literal":"%}"}], "postprocess":  (data, loc, reject) => {
+    {"name": "intermediateControlStatement$ebnf$1", "symbols": ["condition"], "postprocess": id},
+    {"name": "intermediateControlStatement$ebnf$1", "symbols": [], "postprocess": function(d) {return null;}},
+    {"name": "intermediateControlStatement", "symbols": [{"literal":"{%"}, "___", (lexer.has("intermediateConditional") ? {type: "intermediateConditional"} : intermediateConditional), "intermediateControlStatement$ebnf$1", "___", {"literal":"%}"}], "postprocess":  data => {
+            // Check if the intermediate conditions matches the last control statement (no "else" on while statements for example)
+            const intermediateConditional = data[2].value
+            const previousConditional = conditionStack[conditionStack.length - 1]
+            
+            // ex: intermediateConditionals["if"].includes("else") === true
+            let intermediates = intermediateConditionals[previousConditional]
+            if (!(intermediates && intermediates.includes(intermediateConditional))) {
+                let error = `Error: "${previousConditional}" does not accept "${intermediateConditional}" as an intermediate statement.\n`
+                error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+                throw new SyntaxError(error)
+            }
+            
+            return {conditional: data[2].value, condition: data[3], line: data[2].line}
+        }},
+    {"name": "endControlStatement", "symbols": [{"literal":"{%"}, "___", (lexer.has("conditionalEnd") ? {type: "conditionalEnd"} : conditionalEnd), "___", {"literal":"%}"}], "postprocess":  data => {
+            // Check if this end statement matches the last control statement of the stack
             const conditionalEnd = data[2].value
             const previousConditional = conditionStack.pop()
         
             if (conditionals[previousConditional] !== conditionalEnd) {
-                throw new SyntaxError('Error: ' + previousConditional + ' does not match ' + conditionalEnd)
-                return reject
+                let error = `Error: "${previousConditional}" does not accept "${conditionalEnd}" as an end statement.\n`
+                error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+                throw new SyntaxError(error)
             }
             
             return {conditional: conditionalEnd, condition: null, line: data[2].line}
         }},
+    {"name": "condition$subexpression$1", "symbols": ["ws"]},
+    {"name": "condition$subexpression$1", "symbols": ["_nl_"]},
+    {"name": "condition", "symbols": ["condition$subexpression$1", (lexer.has("condition") ? {type: "condition"} : condition)], "postprocess": dataJoin},
     {"name": "blockInside", "symbols": ["_nl", "statementBlock", "nl_"], "postprocess": data => data[1]},
     {"name": "blockInside", "symbols": ["_nl_"], "postprocess": () => []},
     {"name": "blockInside", "symbols": [], "postprocess": () => []},

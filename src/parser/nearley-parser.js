@@ -18,14 +18,7 @@ function parse(string, options) {
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), {keepHistory: true})
     Object.assign(options, options)
 
-    try {
-        parser.feed(string)
-    }
-    catch (error) {
-        throw error
-        //handleErrors(error, parser)
-        //process.exit(1)
-    }
+    parser.feed(string)
 
     let results = parser.results
     if (results.length === 0) {

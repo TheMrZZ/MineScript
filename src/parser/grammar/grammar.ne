@@ -1,5 +1,5 @@
 @{%
-    const {lexer, conditionals} = require("./lexer")
+    const {lexer, conditionals, intermediateConditionals} = require("./lexer")
     
     const dataJoin = data => data.join('')
 
@@ -19,15 +19,6 @@
         return array
     }
 
-    /**
-     * Unescape a string
-     * @param string the string to unescape
-     * @return {string} the unescaped string
-     */
-    function unescape (string) {
-        
-    }
-
     let conditionStack = []
 %}
 
@@ -36,26 +27,55 @@
 # The programs first "level" of code is a block of statements
 main -> _nl:? statementBlock nl_:? {% data => data[1] %}
 
-# A block is a block of statements surrounded by control statements
+# A block is a block of statements surrounded by control statements, possibly followed by an intermediate control block (else, elif)
 block -> controlStatement blockInside endControlStatement {% data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})%}
+       | controlStatement blockInside intermediateControlBlock {% data => ({type: 'block', control: data[0], content: data[1], else: data[2], controlEnd: data[2].controlEnd})%}
 
-controlStatement -> "{%" ___ %conditional ws %condition ___ "%}"  {% data => {
+intermediateControlBlock -> intermediateControlStatement blockInside endControlStatement {% data => ({type: 'block', control: data[0], content: data[1], controlEnd: data[2]})%}
+                          | intermediateControlStatement blockInside intermediateControlBlock  {% data => ({type: 'block', control: data[0], content: data[1], else: data[2], controlEnd: data[2].controlEnd})%}
+
+# The beginning of a control block: {% if  *cond* %}, {% while *cond* %}...
+controlStatement -> "{%" ___ %conditional condition ___ "%}"  {% data => {
+    // Add this control statement to the stack
     const conditional = data[2].value
     conditionStack.push(conditional)
-    return {conditional: conditional, condition: data[4].value, line: data[2].line}
+    return {conditional: conditional, condition: data[3], line: data[2].line}
 }%}
 
-endControlStatement -> "{%" ___ %conditionalEnd ___ "%}" {% (data, loc, reject) => {
+# An intermediate control block: {% else %}, {% elif *cond* %}
+intermediateControlStatement -> "{%" ___ %intermediateConditional condition:? ___ "%}" {% data => {
+    // Check if the intermediate conditions matches the last control statement (no "else" on while statements for example)
+    const intermediateConditional = data[2].value
+    const previousConditional = conditionStack[conditionStack.length - 1]
+    
+    // ex: intermediateConditionals["if"].includes("else") === true
+    let intermediates = intermediateConditionals[previousConditional]
+    if (!(intermediates && intermediates.includes(intermediateConditional))) {
+        let error = `Error: "${previousConditional}" does not accept "${intermediateConditional}" as an intermediate statement.\n`
+        error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+        throw new SyntaxError(error)
+    }
+    
+    return {conditional: data[2].value, condition: data[3], line: data[2].line}
+}%}
+
+# The end of a control block: {% endif %}, {% endwhile %}...
+endControlStatement -> "{%" ___ %conditionalEnd ___ "%}" {% data => {
+    // Check if this end statement matches the last control statement of the stack
     const conditionalEnd = data[2].value
     const previousConditional = conditionStack.pop()
 
     if (conditionals[previousConditional] !== conditionalEnd) {
-        throw new SyntaxError('Error: ' + previousConditional + ' does not match ' + conditionalEnd)
-        return reject
+        let error = `Error: "${previousConditional}" does not accept "${conditionalEnd}" as an end statement.\n`
+        error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+        throw new SyntaxError(error)
     }
     
     return {conditional: conditionalEnd, condition: null, line: data[2].line}
 }%}
+
+# Before a condition, there can be whitespaces or newlines, but nothing is not accepted
+condition -> (ws|_nl_) %condition {% dataJoin %}
 
 # A block can be empty inside
 blockInside -> _nl statementBlock nl_ {% data => data[1] %}
