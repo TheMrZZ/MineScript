@@ -4,7 +4,7 @@ const path = require('path')
 const colors = require('colors') // Do not remove - side-effects are used
 
 const program = require('./src/argumentParser')
-const scriptParser = require('./src/parser/script-parser')
+const scriptParser = require('./src/generator/generateFile')
 
 function getOutputFile(inputFolder, relativeInputFile, subFolder, extension) {
     let relativeOutputFile = path.dirname(path.relative(inputFolder, relativeInputFile))
