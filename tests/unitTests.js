@@ -73,6 +73,16 @@ describe('script-parser', () => {
             assert.throws(parse.bind(null, '{%while true%}{%else%}{%endwhile%}'), SyntaxError)
             assert.throws(parse.bind(null, '{%while true%}{%elif false%}{%endwhile%}'), SyntaxError)
         })
+
+        it('should not accept end control tags without a starting control tag', function () {
+            assert.throws(parse.bind(null, '{%endwhile%}'), Error)
+            assert.throws(parse.bind(null, '{%endif%}'), Error)
+        })
+
+        it('should not accept intermediate control tags without a starting control tag', function () {
+            assert.throws(parse.bind(null, '{%else%}'), Error)
+            assert.throws(parse.bind(null, '{%elif true%}'), Error)
+        })
     })
 
     describe('parse', () => {
@@ -123,6 +133,8 @@ describe('script-parser', () => {
 
         it('should correctly parse while statements', function () {
             assert.equal(parse('i=0\n{% while i < 3 %}\ni += 1\nsay {{i}}\n{% endwhile %}'), 'say 1\nsay 2\nsay 3')
+            assert.equal(parse('i=0\n{% while i < 3 %}\ni += 2\nsay {{i}}\n{% endwhile %}'), 'say 2\nsay 4')
+            assert.equal(parse('i=0\n{% while i > 3 %}\ni += 1\nsay {{i}}\n{% endwhile %}'), '')
         })
 
         it('should correctly parse if statements', function () {
