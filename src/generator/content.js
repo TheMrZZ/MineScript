@@ -69,6 +69,52 @@ function generateBlock(block, variables, depth, options) {
         return result
     }
 
+    if (conditional === 'for') {
+        /* Here is a dirty piece of hack. In order to use the
+         * built-in for loop, we can't just use for(condition) {}.
+         * Here, the condition is not a classical condition,
+         * and evaluating it won't do anything.
+         *
+         * We don't know the variable used either.
+         * Reimplementing the loops is possible, but hard and bug prone.
+         *
+         * Here is the solution chosen:
+         * First, set loopNumber to 0
+         * Then, in a while loop:
+         *  - Evaluate the for inside 'evaluate'
+         *  - When we're at loop "loopNumber", return "true" (meaning the loop should keep going on)
+         *    This sets the correct variables for the current loop number
+         *  - Outside of eval, while the evaluation is true, generate the block content
+         *  - Increase loopNumber
+         *  - Start from the beginning of the loop
+         *
+         *  Huge problem: if any side variable is used inside the condition,
+         *  if the loop variable isn't initialized at start, or if the loop variable is changed inside the block,
+         *  then its value will be unpredictable. For the moment, I didn't find a way to fix this.
+         */
+        function getExpression(condition, loopNumber) {
+            const counterName = '$$__counter__$$' + loopNumber
+            return `(function () {
+            let ${counterName}=0
+            for(${condition}) {
+                if(${counterName} >= ${loopNumber}) return ${counterName}
+                ${counterName}++
+            }
+            return undefined
+            })()`
+        }
+
+        let loopNumber = 0
+        let expr = getExpression(control.condition, loopNumber)
+        while (evaluate(expr, variables, control.line) !== undefined) {
+            result.add(generateContent(block.content, variables, depth + 1, options))
+            loopNumber++
+            expr = getExpression(control.condition, loopNumber)
+        }
+
+        return result
+    }
+
     let error = `Incorrect conditional statement "${conditional}"\n`
     error += 'This case is not supposed to be possible. There is an error in the program itself.\n'
     error += 'Problematic control block:\n' + JSON.stringify(control, null, 2)

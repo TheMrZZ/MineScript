@@ -63,7 +63,8 @@ const globalRules = {
 
 const conditionals = {
     if: "endif",
-    while: "endwhile"
+    while: "endwhile",
+    for: "endfor",
 }
 
 const intermediateConditionals = {

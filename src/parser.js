@@ -16,7 +16,6 @@ function parse(string, options) {
                           'Please include the file you parsed and this error message to your report.'
 
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), {keepHistory: true})
-    Object.assign(options, options)
 
     parser.feed(string)
 
