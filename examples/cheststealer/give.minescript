@@ -3,15 +3,12 @@
 # Gives the items.total number of items to the player
 
 steps = [64, 15, 1]
-i = 0
 id = "minecraft:diamond"
 
-{% while i < steps.length %}
-    n = steps[i]
+{% for (n of steps) %}
     cond = `execute if score total items matches ${n}.. run`
     {{ cond }} give @s {{ id }} {{ n }}
     {{ cond }} scoreboard players remove total items {{ n }}
-    i += 1
-{% endwhile %}
+{% endfor %}
 
 execute if score total items matches 1.. run function cheststealer:give
