@@ -57,15 +57,19 @@ function normalizeCondition(expression) {
  * @param {string} expression the expression to evaluate
  * @param {object} variables the current variables
  * @param {int} line line of the current expression
- * @param {string=} currentExpression (optional) the full expression. Will not be evaluated, but is displayed on error.
+ * @param {string=} currentExpression the full expression. Will not be evaluated, but is displayed on error.
  *                  Useful only a part of an expression is evaluated.
+ * @param {boolean=true} formatErrors if true, then errors by the evaluated statement will be formatted to give clearer information
  * @return {*} the result of the expression
  */
-function evaluate(expression, variables, line, currentExpression) {
+function evaluate(expression, variables, line, currentExpression, formatErrors=true) {
     try {
         return vm.runInContext(expression, variables)
     }
     catch (e) {
+        if (!formatErrors) {
+            throw e
+        }
         let expressionToDisplay = currentExpression === undefined ? expression : currentExpression
         let stack = e.stack.split('\n')
         let msg = `[${e.name}] ${e.message}\n`

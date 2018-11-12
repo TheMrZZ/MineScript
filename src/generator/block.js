@@ -30,7 +30,6 @@ function generateBlock(block, variables, depth, options) {
         return result
     }
 
-
     if (conditional === 'while') {
         let numberOfLoops = 0
         let warning = 10000
@@ -88,7 +87,7 @@ function generateBlock(block, variables, depth, options) {
             return result
         })()`
 
-        result.add(evaluate(expr, context, control.line, conditionDisplay))
+        result.add(evaluate(expr, context, control.line, conditionDisplay, false))
         return result
     }
 
