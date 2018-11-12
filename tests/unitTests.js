@@ -111,6 +111,10 @@ describe('generateFile', () => {
         assert.equal(generate('#test\nsay hi\n#test'), 'say hi')
     })
 
+    it('should render comments starting with ##', function () {
+        assert.equal(generate('## Outputs hey\nsay hey'), '# Outputs hey\nsay hey')
+    })
+
     it('should not render variable assignment', function () {
         assert.equal(generate('a = 5\nsay hi\n  a = 58\n'), 'say hi')
     })
