@@ -38,6 +38,8 @@ function generateCommandArgs(commandArgs, variables) {
     return result
 }
 
+class NameError extends Error {}
+
 /**
  * Generate the content of a block
  * @param {Object[]} blockContent the content of a block - a group of statements
@@ -56,6 +58,13 @@ function generateContent(blockContent, variables, depth, options) {
                 result.add(generateBlock(statement, variables, depth, options))
                 break
             case 'assignment':
+                if (statement.name.startsWith("__")) {
+                    let error = `Incorrect variable name ${statement.name.match(/\w+/)[0]}:\n`
+                    error += "Variable names can't start with a double underscore '__'.\n"
+                    error += "Variables starting by a double underscore '__' are reserved for special variables.\n"
+                    error += `Erroneous expression [line ${statement.line}]:\n${statement.name}${statement.value}`
+                    throw new NameError(error)
+                }
                 evaluate(`${statement.name} ${statement.value}`, variables, statement.line)
                 break
             case 'command':
