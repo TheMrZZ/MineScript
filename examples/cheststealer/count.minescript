@@ -5,16 +5,14 @@ scoreboard objectives add items dummy
 
 # Gives to the player every given item of a chest
 
-slot = 0
 offset = 9
 id = "\"minecraft:diamond\""
 
 scoreboard players set total items 0
 
 # 27 slots in a player inventory, excluding the hotbar
-{% while slot < 27 %}
+{% for (slot = 0; slot < 27; slot++) %}
     scoreboard players set count items 0
     execute as @s run execute store result score count items run data get block ~ ~ ~ Items[{Slot:{{slot}}b,id:{{id}}}].Count
     scoreboard players operation total items += count items
-    slot += 1
-{% endwhile %}
+{% endfor %}
