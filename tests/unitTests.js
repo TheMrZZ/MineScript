@@ -121,6 +121,7 @@ describe('generateFile', () => {
 
     it('should handle lines with only a variable use', function () {
         assert.equal(generate('a = "say hi"\n{{ a }}'), 'say hi')
+        assert.equal(generate('a = "say"\n{{ a }} hi {{ a }}'), 'say hi say')
     })
 
     it('should handle lines starting with a variable use', function () {
