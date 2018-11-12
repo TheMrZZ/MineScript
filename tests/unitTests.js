@@ -28,11 +28,11 @@ describe('grammar', function () {
     })
 
     it('should ignore whitespaces around {%', function () {
-        assert.doesNotThrow(generate.bind(null, '{% \t\n if false %}\n{%endif %}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{% \t\n if (false) %}\n{%endif %}'), SyntaxError)
     })
 
     it('should ignore whitespaces around %}', function () {
-        assert.doesNotThrow(generate.bind(null, '{% if false%}{% endif   \t\t \n%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{% if (false)%}{% endif   \t\t \n%}'), SyntaxError)
     })
 
     it('should ignore whitespaces around {{', function () {
@@ -44,33 +44,33 @@ describe('grammar', function () {
     })
 
     it('should accept while', function () {
-        assert.doesNotThrow(generate.bind(null, '{%while false%}{%endwhile%}'), SyntaxError)
-        assert.doesNotThrow(generate.bind(null, '{%while false%}\n\t\n{%endwhile%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%while (false)%}{%endwhile%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%while (false)%}\n\t\n{%endwhile%}'), SyntaxError)
     })
 
     it('should accept if', function () {
-        assert.doesNotThrow(generate.bind(null, '{%if true%}{%endif%}'), SyntaxError)
-        assert.doesNotThrow(generate.bind(null, '{%if true%}\n\t\n{%endif%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%if (true)%}{%endif%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%if (true)%}\n\t\n{%endif%}'), SyntaxError)
     })
 
     it('should accept if-else', function () {
-        assert.doesNotThrow(generate.bind(null, '{%if false%}{%else%}{%endif%}'), SyntaxError)
-        assert.doesNotThrow(generate.bind(null, '{%if false%}\n{%else%}\n{%endif%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%if (false)%}{%else%}{%endif%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%if (false)%}\n{%else%}\n{%endif%}'), SyntaxError)
     })
 
     it('should accept if-elif-else', function () {
-        assert.doesNotThrow(generate.bind(null, '{%if false%}{%elif true%}{%else%}{%endif%}'), SyntaxError)
-        assert.doesNotThrow(generate.bind(null, '{%if false%}\n{%elif true%}\n{%else%}\n{%endif%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%if (false)%}{%elif (true)%}{%else%}{%endif%}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{%if (false)%}\n{%elif (true)%}\n{%else%}\n{%endif%}'), SyntaxError)
     })
 
     it('should not accept wrong end statements: while endif, if endwhile', function () {
-        assert.throws(generate.bind(null, '{%while true%}{%endif%}'), SyntaxError)
-        assert.throws(generate.bind(null, '{%if true%}{%endwhile%}'), SyntaxError)
+        assert.throws(generate.bind(null, '{%while (true)%}{%endif%}'), SyntaxError)
+        assert.throws(generate.bind(null, '{%if (true)%}{%endwhile%}'), SyntaxError)
     })
 
     it('should not accept wrong intermediate statements: while elif, while else', function () {
-        assert.throws(generate.bind(null, '{%while true%}{%else%}{%endwhile%}'), SyntaxError)
-        assert.throws(generate.bind(null, '{%while true%}{%elif false%}{%endwhile%}'), SyntaxError)
+        assert.throws(generate.bind(null, '{%while (true)%}{%else%}{%endwhile%}'), SyntaxError)
+        assert.throws(generate.bind(null, '{%while (true)%}{%elif (false)%}{%endwhile%}'), SyntaxError)
     })
 
     it('should not accept end control tags without a starting control tag', function () {
@@ -131,32 +131,32 @@ describe('generateFile', () => {
     })
 
     it('should correctly generate while statements', function () {
-        assert.equal(generate('i=0\n{% while i < 3 %}\ni += 1\nsay {{i}}\n{% endwhile %}'), 'say 1\nsay 2\nsay 3')
-        assert.equal(generate('i=0\n{% while i < 3 %}\ni += 2\nsay {{i}}\n{% endwhile %}'), 'say 2\nsay 4')
-        assert.equal(generate('i=0\n{% while i > 3 %}\ni += 1\nsay {{i}}\n{% endwhile %}'), '')
+        assert.equal(generate('i=0\n{% while (i < 3) %}\ni += 1\nsay {{i}}\n{% endwhile %}'), 'say 1\nsay 2\nsay 3')
+        assert.equal(generate('i=0\n{% while (i < 3) %}\ni += 2\nsay {{i}}\n{% endwhile %}'), 'say 2\nsay 4')
+        assert.equal(generate('i=0\n{% while (i > 3) %}\ni += 1\nsay {{i}}\n{% endwhile %}'), '')
     })
 
     it('should correctly generate if statements', function () {
-        assert.equal(generate('{% if 7 > 3 %}\nsay Correct!\n{%endif%}'), 'say Correct!')
-        assert.equal(generate('{% if 3 > 7 %}\nsay Correct!\n{%endif%}'), '')
+        assert.equal(generate('{% if (7 > 3) %}\nsay Correct!\n{%endif%}'), 'say Correct!')
+        assert.equal(generate('{% if (3 > 7) %}\nsay Correct!\n{%endif%}'), '')
     })
 
     it('should correctly generate if-else statements', function () {
-        assert.equal(generate('{% if 7 > 3 %}\nsay Greater\n{%else%}\nsay Lower\n{%endif%}'), 'say Greater')
-        assert.equal(generate('{% if 3 > 7 %}\nsay Greater\n{%else%}\nsay Lower\n{%endif%}'), 'say Lower')
+        assert.equal(generate('{% if (7 > 3) %}\nsay Greater\n{%else%}\nsay Lower\n{%endif%}'), 'say Greater')
+        assert.equal(generate('{% if (3 > 7) %}\nsay Greater\n{%else%}\nsay Lower\n{%endif%}'), 'say Lower')
     })
 
     it('should correctly generate if-elif-else statements', function () {
         assert.equal(
-            generate('{% if 3 > 3 %}\nsay Greater\n{%elif 3==3%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
+            generate('{% if (3 > 3) %}\nsay Greater\n{%elif (3==3)%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
             'say Equal'
         )
         assert.equal(
-            generate('{% if 7 > 3 %}\nsay Greater\n{%elif 7==3%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
+            generate('{% if (7 > 3) %}\nsay Greater\n{%elif (7==3)%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
             'say Greater'
         )
         assert.equal(
-            generate('{% if 3 > 7 %}\nsay Greater\n{%elif 3==7%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
+            generate('{% if (3 > 7) %}\nsay Greater\n{%elif (3==7)%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
             'say Lower'
         )
     })

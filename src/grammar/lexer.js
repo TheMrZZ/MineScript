@@ -94,7 +94,7 @@ let states = {
         conditionalEnd: Object.values(conditionals),
         intermediateConditional: flat(Object.values(intermediateConditionals)),
         condition: {
-            match: addRegex(/(?!\s)/, until("%}", "+", true)),
+            match: addRegex(/\(/, until("%}", "+", true), /\)/),
             lineBreaks: true
         },
         "}%": {match: "%}", pop: true},

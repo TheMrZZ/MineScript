@@ -39,7 +39,7 @@ function generateBlock(block, variables, depth, options) {
     const conditionDisplay = `{% ${conditional}${control.condition}%}`
 
     let result = new GeneratedContent()
-    let argument = normalizeCondition(block.control.condition)
+    let condition = normalizeCondition(block.control.condition)
 
     if (['if', 'elif', 'else'].includes(conditional)) {
         if (conditional === 'else' || evaluate(argument, variables, control.line, conditionDisplay)) {
@@ -56,7 +56,7 @@ function generateBlock(block, variables, depth, options) {
         let numberOfLoops = 0
         let warning = 10000
 
-        while (evaluate(argument, variables, control.line, conditionDisplay)) {
+        while (evaluate(condition, variables, control.line, conditionDisplay)) {
             result.add(generateContent(block.content, variables, depth + 1, options))
 
             if (options.warnings) {
@@ -92,7 +92,7 @@ function generateBlock(block, variables, depth, options) {
             let result = new __GeneratedContent__()
             let oldVars = Object.keys(this)
             
-            for(${control.condition}) {
+            for${condition} {
                 // Check for the variables the for loop added: they are minescript variables, 
                 // so we need to assign them to variables object
                 let newVars = Object.keys(this)

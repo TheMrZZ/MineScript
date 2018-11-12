@@ -52,7 +52,7 @@ intermediateControlStatement -> "{%" ___ %intermediateConditional condition:? __
     let intermediates = intermediateConditionals[previousConditional]
     if (!(intermediates && intermediates.includes(intermediateConditional))) {
         let error = `Error: "${previousConditional}" does not accept "${intermediateConditional}" as an intermediate statement.\n`
-        error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+        error += `Erroneous statement [line ${data[2].line}]:\n${data.join('')}`
         throw new SyntaxError(error)
     }
     
@@ -67,15 +67,15 @@ endControlStatement -> "{%" ___ %conditionalEnd ___ "%}" {% data => {
 
     if (conditionals[previousConditional] !== conditionalEnd) {
         let error = `Error: "${previousConditional}" does not accept "${conditionalEnd}" as an end statement.\n`
-        error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+        error += `Erroneous statement [line ${data[2].line}]:\n${data.join('')}`
         throw new SyntaxError(error)
     }
     
     return {conditional: conditionalEnd, condition: null, line: data[2].line}
 }%}
 
-# Before a condition, there can be whitespaces or newlines, but nothing is not accepted
-condition -> (ws|_nl_) %condition {% dataJoin %}
+# A condition is surrounded by parenthesis  
+condition -> ___ %condition {% dataJoin %}
 
 # A block can be empty inside
 blockInside -> _nl statementBlock nl_ {% data => data[1] %}

@@ -71,6 +71,7 @@ function evaluate(expression, variables, line, currentExpression) {
         let msg = `[${e.name}] ${e.message}\n`
         msg += stack[1] + '\n' + stack[2] + '\n'
         msg += `Erroneous expression [line ${line}]:\n${expressionToDisplay}\n`
+        msg +=  '\n' + '-'.repeat(60) + '\n'
         console.error(msg)
         throw e
     }

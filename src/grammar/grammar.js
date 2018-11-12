@@ -53,7 +53,7 @@ var grammar = {
             let intermediates = intermediateConditionals[previousConditional]
             if (!(intermediates && intermediates.includes(intermediateConditional))) {
                 let error = `Error: "${previousConditional}" does not accept "${intermediateConditional}" as an intermediate statement.\n`
-                error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+                error += `Erroneous statement [line ${data[2].line}]:\n${data.join('')}`
                 throw new SyntaxError(error)
             }
             
@@ -66,15 +66,13 @@ var grammar = {
         
             if (conditionals[previousConditional] !== conditionalEnd) {
                 let error = `Error: "${previousConditional}" does not accept "${conditionalEnd}" as an end statement.\n`
-                error += `Erroneous statement [line ${data[2].line}]: ${data.join('')}`
+                error += `Erroneous statement [line ${data[2].line}]:\n${data.join('')}`
                 throw new SyntaxError(error)
             }
             
             return {conditional: conditionalEnd, condition: null, line: data[2].line}
         }},
-    {"name": "condition$subexpression$1", "symbols": ["ws"]},
-    {"name": "condition$subexpression$1", "symbols": ["_nl_"]},
-    {"name": "condition", "symbols": ["condition$subexpression$1", (lexer.has("condition") ? {type: "condition"} : condition)], "postprocess": dataJoin},
+    {"name": "condition", "symbols": ["___", (lexer.has("condition") ? {type: "condition"} : condition)], "postprocess": dataJoin},
     {"name": "blockInside", "symbols": ["_nl", "statementBlock", "nl_"], "postprocess": data => data[1]},
     {"name": "blockInside", "symbols": ["_nl_"], "postprocess": () => []},
     {"name": "blockInside", "symbols": [], "postprocess": () => []},
