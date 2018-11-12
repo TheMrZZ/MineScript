@@ -42,7 +42,7 @@ function generateBlock(block, variables, depth, options) {
     let condition = normalizeCondition(block.control.condition)
 
     if (['if', 'elif', 'else'].includes(conditional)) {
-        if (conditional === 'else' || evaluate(argument, variables, control.line, conditionDisplay)) {
+        if (conditional === 'else' || evaluate(condition, variables, control.line, conditionDisplay)) {
             result = generateContent(block.content, variables, depth + 1, options)
         }
         else if (block.else) {
