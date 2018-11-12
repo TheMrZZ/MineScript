@@ -3,17 +3,17 @@ const file = require('file')
 const path = require('path')
 const colors = require('colors') // Do not remove - side-effects are used
 
-const program = require('./src/argumentParser')
-const scriptParser = require('./src/parser/script-parser')
+const options = require('./src/argumentParser')
+const scriptParser = require('./src/generator/file')
 
 function getOutputFile(inputFolder, relativeInputFile, subFolder, extension) {
     let relativeOutputFile = path.dirname(path.relative(inputFolder, relativeInputFile))
     let name = path.parse(relativeInputFile).name
-    let outputFile = path.join(program.outputFolder, relativeOutputFile, subFolder, name + extension)
+    let outputFile = path.join(options.outputFolder, relativeOutputFile, subFolder, name + extension)
     return outputFile
 }
 
-file.walk(program.inputFolder, (err, dirPath, dirs, files) => {
+file.walk(options.inputFolder, (err, dirPath, dirs, files) => {
     files.forEach(relativeFilePath => {
         if (!['.mcscript', '.minescript'].includes(path.parse(relativeFilePath).ext)) {
             return
@@ -21,10 +21,10 @@ file.walk(program.inputFolder, (err, dirPath, dirs, files) => {
 
         const string = fs.readFileSync(relativeFilePath, 'utf8')
 
-        const result = scriptParser(string)
-        const outputFile = getOutputFile(program.inputFolder, relativeFilePath, 'functions', '.mcfunction')
+        const result = scriptParser(string, options)
+        const outputFile = getOutputFile(options.inputFolder, relativeFilePath, 'functions', '.mcfunction')
 
-        if (program.debug) {
+        if (options.debug) {
             console.log(result)
         }
 

@@ -45,6 +45,16 @@ function addRegex(...regexs) {
     return new RegExp(regexString)
 }
 
+/**
+ * Flattens a 2D array into a 1D array
+ * @example flat([[1, 2], [3, 4]]) => [1, 2, 3, 4]
+ * @param {*[]} array the array to flatten
+ * @return {*[]} the flattened array
+ */
+function flat(array) {
+    return [].concat.apply([], array)
+}
+
 const globalRules = {
     newlines: {match: /[\r\n]+/, lineBreaks: true},
     ws: /[ \t\v\f]+/,
@@ -53,7 +63,12 @@ const globalRules = {
 
 const conditionals = {
     if: "endif",
-    while: "endwhile"
+    while: "endwhile",
+    for: "endfor",
+}
+
+const intermediateConditionals = {
+    if: ["else", "elif"]
 }
 
 let states = {
@@ -77,9 +92,9 @@ let states = {
     controlBlock: {
         conditional: Object.keys(conditionals),
         conditionalEnd: Object.values(conditionals),
+        intermediateConditional: flat(Object.values(intermediateConditionals)),
         condition: {
-            match: addRegex(/(?!\s)/, until("%}", "+", true)),
-            value: s => s.trim(),
+            match: addRegex(/\(/, until("%}", "+", true), /\)/),
             lineBreaks: true
         },
         "}%": {match: "%}", pop: true},
@@ -121,4 +136,4 @@ for (let stateName in states) {
 }
 
 const lexer = moo.states(states)
-module.exports = {lexer, conditionals}
+module.exports = {lexer, conditionals, intermediateConditionals}

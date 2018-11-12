@@ -15,14 +15,14 @@ const literalRepr = {
 
 /**
  * Returns the current rule
- * @param parser the parser
+ * @param generator the generator
  * @param table the current table
  * @return {string} the current rule
  */
-function getCurrentRule(parser, table) {
+function getCurrentRule(generator, table) {
     const currentState = table.states[table.states.length - 1]
     const currentStateName = currentState.rule.name
-    const currentRule = parser.grammar.rules.filter(rule => rule.name === currentStateName)[0]
+    const currentRule = generator.grammar.rules.filter(rule => rule.name === currentStateName)[0]
 
     return currentRule
 }
@@ -96,9 +96,9 @@ function symbolRepresentation(symbol, keywords) {
     return symbol.toString()
 }
 
-function getSymbolErrorMessage(parser) {
+function getSymbolErrorMessage(generator) {
     // Get the last used earley table, to know where things got wrong
-    const lastTable = parser.table.reduce((final, table) => {
+    const lastTable = generator.table.reduce((final, table) => {
         if (table.states.length > 0)
             return table
         return final
@@ -106,8 +106,8 @@ function getSymbolErrorMessage(parser) {
 
     const incorrectTokenIndex = lastTable.states[lastTable.states.length - 1].dot
 
-    const keywords = getKeywords(parser.lexer)
-    const currentRule = getCurrentRule(parser, lastTable)
+    const keywords = getKeywords(generator.lexer)
+    const currentRule = getCurrentRule(generator, lastTable)
 
     const expected = 'Expected: '
     let errorMsg = [expected, ' '.repeat(expected.length)]
@@ -142,15 +142,15 @@ function getSymbolErrorMessage(parser) {
 /**
  * Prints a detailed error message, then exit the program.
  * @param error the error returned
- * @param parser the current parser
+ * @param generator the current generator
  */
-function handleError(error, parser) {
-    const lexer = parser.lexer
+function handleError(error, generator) {
+    const lexer = generator.lexer
 
     let legend = ['Legend:', '[] = optional', '{"a"|"b"} = "a" or "b"']
     legend = legend.join('\n\t• ').legendColor + '\n'
 
-    let errorMsg = getSymbolErrorMessage(parser)
+    let errorMsg = getSymbolErrorMessage(generator)
     console.log(legend.legendColor)
     console.log(lexer.formatError(error.token, 'Error: Invalid token').errorColor)
     console.log(errorMsg.errorColor)
