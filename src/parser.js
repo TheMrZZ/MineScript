@@ -17,7 +17,12 @@ function parse(string, options) {
 
     const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar), {keepHistory: true})
 
-    parser.feed(string)
+    try {
+        parser.feed(string)
+    }
+    catch (e) {
+        throw new SyntaxError(e)
+    }
 
     let results = parser.results
     if (results.length === 0) {

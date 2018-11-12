@@ -35,6 +35,24 @@ describe('grammar', function () {
         assert.doesNotThrow(generate.bind(null, '{% if (false)%}{% endif   \t\t \n%}'), SyntaxError)
     })
 
+    it('should ignore whitespaces before and after opening parenthesis in conditions', function () {
+        assert.doesNotThrow(generate.bind(null, '{% if(false) %}{% endif %}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{% if\n(\nfalse) %}{% endif %}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{% if \t\n ( \n\t false) %}{% endif %}'), SyntaxError)
+    })
+
+    it('should ignore whitespaces before and after opening parenthesis in conditions', function () {
+        assert.doesNotThrow(generate.bind(null, '{% if(false) %}{% endif %}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{% if(false\n)\n%}{% endif %}'), SyntaxError)
+        assert.doesNotThrow(generate.bind(null, '{% if(false \t\n ) \t\n %}{% endif %}'), SyntaxError)
+    })
+
+    it('should refuse conditions not surrounded by parenthesis', function () {
+        assert.throws(generate.bind(null, '{% if true %}{% endif %}'), SyntaxError)
+        assert.throws(generate.bind(null, '{% while true %}{% endif %}'), SyntaxError)
+        assert.throws(generate.bind(null, '{% for i = 0; i < 1; i++ %}{% endif %}'), SyntaxError)
+    })
+
     it('should ignore whitespaces around {{', function () {
         assert.doesNotThrow(generate.bind(null, 'a=0\nsay {{ \t\n a }}\nsay {{a }}'), SyntaxError)
     })
@@ -74,13 +92,13 @@ describe('grammar', function () {
     })
 
     it('should not accept end control tags without a starting control tag', function () {
-        assert.throws(generate.bind(null, '{%endwhile%}'), Error)
-        assert.throws(generate.bind(null, '{%endif%}'), Error)
+        assert.throws(generate.bind(null, '{%endwhile%}'), SyntaxError)
+        assert.throws(generate.bind(null, '{%endif%}'), SyntaxError)
     })
 
     it('should not accept intermediate control tags without a starting control tag', function () {
-        assert.throws(generate.bind(null, '{%else%}'), Error)
-        assert.throws(generate.bind(null, '{%elif true%}'), Error)
+        assert.throws(generate.bind(null, '{%else%}'), SyntaxError)
+        assert.throws(generate.bind(null, '{%elif true%}'), SyntaxError)
     })
 })
 
@@ -159,5 +177,12 @@ describe('generateFile', () => {
             generate('{% if (3 > 7) %}\nsay Greater\n{%elif (3==7)%}\nsay Equal\n{%else%}\nsay Lower\n{%endif%}'),
             'say Lower'
         )
+    })
+
+    it('should correctly generate for statements', function () {
+        assert.equal(generate('{% for (i = 0; i < 2; i++) %}\nsay {{ i }}\n{% endfor %}'), 'say 0\nsay 1')
+        assert.equal(generate('{% for (i = 0; i < 3; i++) %}\nsay {{ i }}\ni+=1\n{% endfor %}'), 'say 0\nsay 2')
+        assert.equal(generate('{% for (i = 0, j = 0; i < 2; i++, j += 2) %}\nsay {{i}} {{j}}\n{% endfor %}'), 'say 0 0\nsay 1 2')
+        assert.equal(generate('{% for (i of [8, 4, 4]) %}\nsay {{i}}\n{% endfor %}'), 'say 8\nsay 4\nsay 4')
     })
 })
