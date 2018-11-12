@@ -1,3 +1,5 @@
+const vm = require('vm')
+
 const {evaluate, GeneratedContent, normalizeCondition} = require('./helper')
 
 /**
@@ -23,7 +25,6 @@ function generateCommandArgs(commandArgs, variables) {
     return result
 }
 
-
 /**
  * Generate any block
  * @param {Object} block the control block
@@ -35,7 +36,7 @@ function generateCommandArgs(commandArgs, variables) {
 function generateBlock(block, variables, depth, options) {
     const control = block.control
     const conditional = control.conditional
-    const conditionDisplay = `{% ${conditional} ${control.condition} %}`
+    const conditionDisplay = `{% ${conditional}${control.condition}%}`
 
     let result = new GeneratedContent()
     let argument = normalizeCondition(block.control.condition)
@@ -70,48 +71,45 @@ function generateBlock(block, variables, depth, options) {
     }
 
     if (conditional === 'for') {
-        /* Here is a dirty piece of hack. In order to use the
-         * built-in for loop, we can't just use for(condition) {}.
-         * Here, the condition is not a classical condition,
-         * and evaluating it won't do anything.
-         *
-         * We don't know the variable used either.
-         * Reimplementing the loops is possible, but hard and bug prone.
-         *
-         * Here is the solution chosen:
-         * First, set loopNumber to 0
-         * Then, in a while loop:
-         *  - Evaluate the for inside 'evaluate'
-         *  - When we're at loop "loopNumber", return "true" (meaning the loop should keep going on)
-         *    This sets the correct variables for the current loop number
-         *  - Outside of eval, while the evaluation is true, generate the block content
-         *  - Increase loopNumber
-         *  - Start from the beginning of the loop
-         *
-         *  Huge problem: if any side variable is used inside the condition,
-         *  if the loop variable isn't initialized at start, or if the loop variable is changed inside the block,
-         *  then its value will be unpredictable. For the moment, I didn't find a way to fix this.
+        const context = vm.createContext(Object.assign({}, variables, {
+            __generateContent__: generateContent,
+            __GeneratedContent__: GeneratedContent,
+            __variables__: variables,
+            __content__: block.content,
+            __depth__: depth,
+            __options__: options
+        }))
+
+        /* To handle for loops, we have to do the following inside a VM:
+         *  - Use the for loop given inside the minescript to:
+         *      - Check if the for loop added some variables (they are Minescript variables)
+         *      Add these variables to the 'variables' object
+         *      - Generate the content of the body, and add it to the result
+         *      - Update the loop variables with their new values
+         * - Return the result
          */
-        function getExpression(condition, loopNumber) {
-            const counterName = '$$__counter__$$' + loopNumber
-            return `(function () {
-            let ${counterName}=0
-            for(${condition}) {
-                if(${counterName} >= ${loopNumber}) return ${counterName}
-                ${counterName}++
+        const expr = `(function () {
+            let result = new __GeneratedContent__()
+            let oldVars = Object.keys(this)
+            
+            for(${control.condition}) {
+                // Check for the variables the for loop added: they are minescript variables, 
+                // so we need to assign them to variables object
+                let newVars = Object.keys(this)
+                let createdVars = newVars.filter(key => !oldVars.includes(key))
+                Object.assign(__variables__, createdVars.reduce(function (obj, v) {obj[v] = this[v]; return obj}, {}))
+
+                result.add(__generateContent__(__content__, __variables__, __depth__ + 1, __options__)) 
+                
+                // If a loop variable was updated inside the body, update it in the function
+                for (let v of createdVars) {
+                    this[v] = __variables__[v]
+                }
             }
-            return undefined
-            })()`
-        }
+            return result
+        })()`
 
-        let loopNumber = 0
-        let expr = getExpression(control.condition, loopNumber)
-        while (evaluate(expr, variables, control.line) !== undefined) {
-            result.add(generateContent(block.content, variables, depth + 1, options))
-            loopNumber++
-            expr = getExpression(control.condition, loopNumber)
-        }
-
+        result.add(evaluate(expr, context, control.line, conditionDisplay))
         return result
     }
 
