@@ -1,6 +1,6 @@
 const vm = require('vm')
 
-const {evaluate, GeneratedContent, normalizeCondition} = require('./helper')
+const {evaluate, MinecraftFunction, normalizeCondition} = require('./helper')
 
 const generateContent = require('./content')
 
@@ -10,22 +10,22 @@ const generateContent = require('./content')
  * @param {Object} variables the variables of the current scope
  * @param {int} depth depth of the current block
  * @param {Object} options the generator options
- * @returns {GeneratedContent} the result of the parsing
+ * @returns {Promise.<MinecraftFunction>} the result of the parsing
  */
-function generateBlock(block, variables, depth, options) {
+async function generateBlock(block, variables, depth, options) {
     const control = block.control
     const conditional = control.conditional
     const conditionDisplay = `{% ${conditional}${control.condition}%}`
 
-    let result = new GeneratedContent()
+    let result = new MinecraftFunction()
     let condition = normalizeCondition(block.control.condition)
 
     if (['if', 'elif', 'else'].includes(conditional)) {
         if (conditional === 'else' || evaluate(condition, variables, control.line, conditionDisplay)) {
-            result = generateContent(block.content, variables, depth + 1, options)
+            result = await generateContent(block.content, variables, depth + 1, options)
         }
         else if (block.else) {
-            result = generateBlock(block.else, variables, depth, options)
+            result = await generateBlock(block.else, variables, depth, options)
         }
         return result
     }
@@ -35,7 +35,7 @@ function generateBlock(block, variables, depth, options) {
         let warning = 10000
 
         while (evaluate(condition, variables, control.line, conditionDisplay)) {
-            result.add(generateContent(block.content, variables, depth + 1, options))
+            result.add(await generateContent(block.content, variables, depth + 1, options))
 
             if (options.warnings) {
                 numberOfLoops++
@@ -51,7 +51,7 @@ function generateBlock(block, variables, depth, options) {
     if (conditional === 'for') {
         const context = vm.createContext(Object.assign({}, variables, {
             __generateContent__: generateContent,
-            __GeneratedContent__: GeneratedContent,
+            __GeneratedContent__: MinecraftFunction,
             __variables__: variables,
             __content__: block.content,
             __depth__: depth,
@@ -66,7 +66,7 @@ function generateBlock(block, variables, depth, options) {
          *      - Update the loop variables with their new values
          * - Return the result
          */
-        const expr = `(function () {
+        const expr = `(async function () {
             let result = new __GeneratedContent__()
             let oldVars = Object.keys(this)
             
@@ -77,7 +77,7 @@ function generateBlock(block, variables, depth, options) {
                 let createdVars = newVars.filter(key => !oldVars.includes(key))
                 Object.assign(__variables__, createdVars.reduce(function (obj, v) {obj[v] = this[v]; return obj}, {}))
 
-                result.add(__generateContent__(__content__, __variables__, __depth__ + 1, __options__)) 
+                result.add(await __generateContent__(__content__, __variables__, __depth__ + 1, __options__)) 
                 
                 // If a loop variable was updated inside the body, update it in the function
                 for (let v of createdVars) {
@@ -87,7 +87,7 @@ function generateBlock(block, variables, depth, options) {
             return result
         })()`
 
-        result.add(evaluate(expr, context, control.line, conditionDisplay, false))
+        result.add(await evaluate(expr, context, control.line, conditionDisplay, false))
         return result
     }
 

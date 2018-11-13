@@ -1,6 +1,8 @@
 const fs = require('fs')
 const file = require('file')
 const path = require('path')
+
+// noinspection JSUnusedLocalSymbols
 const colors = require('colors') // Do not remove - side-effects are used
 
 const options = require('./src/argumentParser')
@@ -15,27 +17,30 @@ function getOutputFile(inputFolder, relativeInputFile, subFolder, extension) {
 
 file.walk(options.inputFolder, (err, dirPath, dirs, files) => {
     files.forEach(relativeFilePath => {
+        console.time(relativeFilePath)
         if (!['.mcscript', '.minescript'].includes(path.parse(relativeFilePath).ext)) {
             return
         }
 
         const string = fs.readFileSync(relativeFilePath, 'utf8')
 
-        const result = scriptParser(string, options)
-        const outputFile = getOutputFile(options.inputFolder, relativeFilePath, 'functions', '.mcfunction')
+        scriptParser(string, options).then(result => {
+            const outputFile = getOutputFile(options.inputFolder, relativeFilePath, 'functions', '.mcfunction')
 
-        if (options.debug) {
-            console.log(result)
-        }
+            if (options.debug) {
+                console.log(result)
+            }
 
-        fs.writeFile(outputFile, result.function.join('\n'), 'utf8', err => {
-            if (err) {
-                console.error(err)
-                throw err
-            }
-            else {
-                console.log(`[${relativeFilePath}] Compilation successful!`.green)
-            }
+            fs.writeFile(outputFile, result.statements.join('\n'), 'utf8', err => {
+                if (err) {
+                    console.error(err)
+                    throw err
+                }
+                else {
+                    console.log(`[${relativeFilePath}] Compilation successful!`.green)
+                    console.timeEnd(relativeFilePath)
+                }
+            })
         })
     })
 })

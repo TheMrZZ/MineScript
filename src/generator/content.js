@@ -1,4 +1,4 @@
-const {evaluate, GeneratedContent} = require('./helper')
+const {evaluate, MinecraftFunction} = require('./helper')
 
 module.exports = generateContent
 
@@ -19,9 +19,9 @@ const generateBlock = require('./block')
  * Generate a command from command arguments
  * @param commandArgs the arguments to generate
  * @param variables the current variables
- * @return {string} the result of the parsing
+ * @return {Promise.<String>} the result of the parsing
  */
-function generateCommandArgs(commandArgs, variables) {
+async function generateCommandArgs(commandArgs, variables) {
     if (!commandArgs) {
         return ''
     }
@@ -32,7 +32,7 @@ function generateCommandArgs(commandArgs, variables) {
             result += arg.data
         }
         else {
-            result += evaluate(arg.data, variables, arg.line)
+            result += await evaluate(arg.data, variables, arg.line)
         }
     }
     return result
@@ -46,16 +46,16 @@ class NameError extends Error {}
  * @param {Object} variables the current variables
  * @param {int} depth the depth of the current block content
  * @param {Object} options the generator options
- * @returns {GeneratedContent} the result of the parsing
+ * @returns {Promise.<MinecraftFunction>} the result of the parsing
  */
-function generateContent(blockContent, variables, depth, options) {
-    let result = new GeneratedContent()
+async function generateContent(blockContent, variables, depth, options) {
+    let result = new MinecraftFunction()
 
     for (const statement of blockContent) {
         const type = statement.type
         switch (type) {
             case 'block':
-                result.add(generateBlock(statement, variables, depth, options))
+                result.add(await generateBlock(statement, variables, depth, options))
                 break
             case 'assignment':
                 if (statement.name.startsWith("__")) {
@@ -65,10 +65,10 @@ function generateContent(blockContent, variables, depth, options) {
                     error += `Erroneous expression [line ${statement.line}]:\n${statement.name}${statement.value}`
                     throw new NameError(error)
                 }
-                evaluate(`${statement.name} ${statement.value}`, variables, statement.line)
+                await evaluate(`${statement.name} ${statement.value}`, variables, statement.line)
                 break
             case 'command':
-                result.add(`${statement.command} ${generateCommandArgs(statement.value, variables)}`)
+                result.add(`${statement.command} ${await generateCommandArgs(statement.value, variables)}`)
                 break
             case 'comment':
                 if (statement.comment.startsWith('##')) {
@@ -76,8 +76,8 @@ function generateContent(blockContent, variables, depth, options) {
                 }
                 break
             case 'initialExpression':
-                result.add(evaluate(statement.expression, variables, statement.line) +
-                           generateCommandArgs(statement.value, variables))
+                result.add(await evaluate(statement.expression, variables, statement.line) +
+                           await generateCommandArgs(statement.value, variables))
                 break
             default:
                 let error = `Incorrect statement type "${type}"\n`
