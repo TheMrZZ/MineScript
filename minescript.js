@@ -16,10 +16,14 @@ function getOutputFile(inputFolder, relativeInputFile, subFolder, extension) {
 }
 
 file.walk(options.inputFolder, (err, dirPath, dirs, files) => {
+    let numberOfFiles = 0, generatedFiles = 0
+    let globalStart = new Date()
     files.forEach(relativeFilePath => {
         if (!['.mcscript', '.minescript'].includes(path.parse(relativeFilePath).ext)) {
             return
         }
+        let start = new Date()
+        numberOfFiles++
 
         const string = fs.readFileSync(relativeFilePath, 'utf8')
 
@@ -36,7 +40,19 @@ file.walk(options.inputFolder, (err, dirPath, dirs, files) => {
                     throw err
                 }
                 else {
-                    console.log(`[${relativeFilePath}] Compilation successful!`.green)
+                    let end = new Date()
+                    let time = ''
+                    if (options.time) {
+                        time = `${(end - start).toLocaleString()} ms`.gray
+                    }
+                    console.log(`[${relativeFilePath}] Compilation successful!`.green, time)
+
+                    generatedFiles++
+                    if (options.time && generatedFiles === numberOfFiles) {
+                        const globalEnd = new Date()
+                        let globalTime = `${(globalEnd - globalStart).toLocaleString()} ms`
+                        console.log('Total time:', globalTime)
+                    }
                 }
             })
         })
