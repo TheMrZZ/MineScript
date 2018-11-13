@@ -17,7 +17,6 @@ function getOutputFile(inputFolder, relativeInputFile, subFolder, extension) {
 
 file.walk(options.inputFolder, (err, dirPath, dirs, files) => {
     files.forEach(relativeFilePath => {
-        console.time(relativeFilePath)
         if (!['.mcscript', '.minescript'].includes(path.parse(relativeFilePath).ext)) {
             return
         }
@@ -38,7 +37,6 @@ file.walk(options.inputFolder, (err, dirPath, dirs, files) => {
                 }
                 else {
                     console.log(`[${relativeFilePath}] Compilation successful!`.green)
-                    console.timeEnd(relativeFilePath)
                 }
             })
         })
