@@ -17,7 +17,7 @@ const literalRepr = {
  * Returns the current rule
  * @param generator the generator
  * @param table the current table
- * @return {string} the current rule
+ * @return {Rule} the current rule
  */
 function getCurrentRule(generator, table) {
     const currentState = table.states[table.states.length - 1]

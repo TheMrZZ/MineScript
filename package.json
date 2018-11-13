@@ -1,9 +1,11 @@
 {
   "name": "minescript",
-  "version": "0.0.2-alpha",
+  "version": "0.0.3-alpha",
   "description": "A Minecraft Functions templating engine",
   "main": "lexer.js",
   "dependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "colors": "^1.3.2",
     "commander": "^2.19.0",
     "expr-eval": "^1.2.2",
